@@ -39,7 +39,7 @@ export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
   const columns: Record<string,string[]> = {name:[],strength:[],dose:[],frequency:[],route:[],duration:[],instructions:[]};
   let active = '';
   for (const raw of lines) {
-    const line = raw.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, '').trim();
+    const line = raw.replace(/^\s*(?:\d+[.)]\s+|[-•*]\s*)/, '').trim();
     if (!line || /^(?:s\.?\s*no\.?|serial\s*no\.?)$/i.test(line)) continue;
     const header = Object.entries(headers).find(([,pattern])=>pattern.test(line));
     if (header) { active = header[0]; continue; }
