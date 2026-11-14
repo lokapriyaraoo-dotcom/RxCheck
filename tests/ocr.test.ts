@@ -28,7 +28,7 @@ describe('OCR safety boundary', () => {
 
 describe('prescription field extraction', () => {
   it('extracts patient demographics when OCR separates the weight value', () => {
-    const result = extractPatientDetails('Patient Name : Rahul Sharma\\nAge / Sex : 25 years / Male\\nWeight\\n: 60 kg');
+    const result = extractPatientDetails('Patient Name : Rahul Sharma\nAge / Sex : 25 years / Male\nWeight\n: 60 kg');
     expect(result).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
   });
   it('reconstructs medicine rows from OCR table columns', () => {
@@ -38,7 +38,7 @@ describe('prescription field extraction', () => {
       'Prescribed Dose','500 mg','500 mg','15 mg','800 mg',
       'Frequency','Every 2 hours','Three times daily','Daily','Three times daily',
       'Route','Oral','Oral','Oral','Oral'
-    ].join('\\n');
+    ].join('\n');
     const meds = extractMedicineCandidates(text);
     expect(meds).toHaveLength(4);
     expect(meds[0]).toMatchObject({name:'Paracetamol',strength:'500 mg',dose:'500 mg',frequency:'Every 2 hours',instructions:'Route: Oral'});
