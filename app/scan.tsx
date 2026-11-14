@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, Image, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
-import { readPrescriptionImage } from '../services/ocr';
+import { readPrescriptionImage, validateImageBytes } from '../services/ocr';
 
 export default function Scan() {
   const router = useRouter();
@@ -47,7 +47,10 @@ export default function Scan() {
     }
     if (result.canceled || !result.assets.length) return;
     const remaining = Math.max(0, 5 - images.length);
-    const selected = result.assets.slice(0, remaining).map(asset => asset.uri);
+    const acceptable = result.assets.filter(asset => asset.fileSize == null || validateImageBytes(asset.fileSize));
+    const oversized = result.assets.length - acceptable.length;
+    if (oversized) Alert.alert('Some images were skipped', 'Images over 12 MB are not processed. Please resize them and try again.');
+    const selected = acceptable.slice(0, remaining).map(asset => asset.uri);
     if (!selected.length) {
       Alert.alert('Image limit reached', 'You can process up to five images in one review.');
       return;
