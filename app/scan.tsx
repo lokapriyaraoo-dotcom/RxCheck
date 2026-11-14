@@ -55,7 +55,7 @@ export default function Scan() {
       {images.map((uri, i) => <Image key={`${uri}-${i}`} source={{ uri }} style={s.preview} />)}
       {recognizedText ? <>
         <View style={s.warning}><Text style={s.warnTitle}>Prescription read successfully</Text><Text style={s.warnText}>RxCheck will organize detected text into patient and medicine fields using AI on the next screen. Review every value against the original image.</Text></View>
-        <Pressable style={s.primary} onPress={() => router.push({ pathname: '/manual', params: { ocrText: recognizedText } })}><Text style={s.primaryText}>Continue — AI autofill patient & medicines →</Text></Pressable>
+        <Pressable style={s.primary} onPress={() => Alert.alert('Allow AI prescription autofill?','The extracted prescription text will be sent to the RxCheck secure AI gateway and configured AI provider to fill patient and medicine fields. Continue only if you consent.',[{text:'Cancel',style:'cancel'},{text:'Allow & continue',onPress:()=>router.push({pathname:'/manual',params:{ocrText:recognizedText,aiConsent:'true'}})}])}><Text style={s.primaryText}>Continue — AI autofill patient & medicines →</Text></Pressable>
       </> : <View style={s.warning}><Text style={s.warnTitle}>Important</Text><Text style={s.warnText}>OCR may misread handwriting, medicine names, decimal points or units. If text is unclear, do not guess; ask a pharmacist or prescriber.</Text></View>}
     </ScrollView>
   );
