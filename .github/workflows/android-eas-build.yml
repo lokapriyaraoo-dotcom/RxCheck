@@ -1,0 +1,36 @@
+name: Android development APK (Expo EAS)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out RxCheck
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Install EAS CLI
+        run: npm install --global eas-cli
+
+      - name: Build Android development APK on Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "Missing EXPO_TOKEN. Add it in GitHub repository Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          eas build --platform android --profile development --non-interactive --wait
