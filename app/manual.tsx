@@ -9,7 +9,7 @@ import { askClaudeToReview, extractPrescriptionWithAI } from '../services/ai';
 
 const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')=><View style={{gap:5}}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChange} placeholder={placeholder} style={s.input}/></View>;
 export default function Manual(){
- const router=useRouter();const params=useLocalSearchParams<{ocrText?:string}>();
+ const router=useRouter();const params=useLocalSearchParams<{ocrText?:string;aiConsent?:string}>();
  const [ocrText,setOcrText]=useState(typeof params.ocrText==='string'?params.ocrText:'');
  const [patient,setPatient]=useState<Patient>(()=>({...emptyPatient,...extractPatientDetails(typeof params.ocrText==='string'?params.ocrText:'')}));
  const [meds,setMeds]=useState<Medicine[]>(()=>extractMedicineCandidates(typeof params.ocrText==='string'?params.ocrText:'').map((m,i)=>({id:'ocr-'+i,name:m.name||'',strength:m.strength||'',dose:'',unit:'unknown' as const,frequency:m.frequency||'',duration:'',instructions:'',needsReview:true})));
