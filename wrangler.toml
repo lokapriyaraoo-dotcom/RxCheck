@@ -1,0 +1,6 @@
+name = "rxcheck-ai-proxy"
+main = "backend/worker.ts"
+compatibility_date = "2026-11-14"
+
+[vars]
+# Set OMNIROUTE_BASE_URL and OMNIROUTE_MODEL in the Cloudflare Worker dashboard.
