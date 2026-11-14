@@ -1,4 +1,3 @@
-export type ClaudeReviewInput = { prescriptionText: string; patient: Record<string, unknown>; medicines: Array<Record<string, unknown>>; otherMedicines: string };
 export type AIExtractedPrescription = {
   patient?: { name?: string; age?: string | number; gender?: string; weightKg?: string | number; allergies?: string };
   medicines?: Array<{ name?: string; strength?: string; dose?: string; unit?: string; frequency?: string; duration?: string; route?: string; instructions?: string; confidence?: number }>;
@@ -26,10 +25,4 @@ export async function extractPrescriptionWithAI(prescriptionText: string): Promi
   const data = await postAI<{ extracted: AIExtractedPrescription }>('/extract', { prescriptionText });
   if (!data.extracted || !Array.isArray(data.extracted.medicines)) throw new Error('AI returned an invalid prescription format.');
   return data.extracted;
-}
-/** Calls the RxCheck server proxy. OmniRoute and provider credentials stay server-side. */
-export async function askClaudeToReview(input: ClaudeReviewInput): Promise<string> {
-  const data = await postAI<{ analysis: string }>('/analyze', input);
-  if (typeof data.analysis !== 'string' || !data.analysis.trim()) throw new Error('The AI service returned an empty response.');
-  return data.analysis.trim();
 }
