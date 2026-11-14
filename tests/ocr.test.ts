@@ -31,6 +31,12 @@ describe('prescription field extraction', () => {
     const result = extractPatientDetails('Patient Name : Rahul Sharma\nAge / Sex : 25 years / Male\nWeight\n: 60 kg');
     expect(result).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
   });
+
+  it('extracts weight when OCR reads the weight label before name and age', () => {
+    const text = ['Weight','Patient Name : Rahul Sharma','Age / Sex : 25 years / Male',': 60 kg','Presenting Complaints: Fever'].join('\\n');
+    expect(extractPatientDetails(text)).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
+  });
+
   it('reconstructs medicine rows from OCR table columns', () => {
     const text = [
       'Drug Name','Paracetamol','Chloroquine','Primaquine','Ibuprofen',
