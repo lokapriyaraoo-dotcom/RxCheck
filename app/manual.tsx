@@ -12,7 +12,7 @@ export default function Manual(){
  const [ocrText,setOcrText]=useState(typeof params.ocrText==='string'?params.ocrText:'');
  const extracted=useMemo(()=>extractPatientDetails(ocrText),[ocrText]);
  const [patient,setPatient]=useState<Patient>(()=>({...emptyPatient,...extractPatientDetails(typeof params.ocrText==='string'?params.ocrText:'')}));
- const [meds,setMeds]=useState<Medicine[]>(()=>extractMedicineCandidates(typeof params.ocrText==='string'?params.ocrText:'').map((m,i)=>({id:'ocr-'+i,name:m.name||'',strength:m.strength||'',dose:'',unit:'unknown',frequency:m.frequency||'',duration:'',instructions:'',needsReview:true})));
+ const [meds,setMeds]=useState<Medicine[]>(()=>extractMedicineCandidates(typeof params.ocrText==='string'?params.ocrText:'').map((m,i)=>({id:'ocr-'+i,name:m.name||'',strength:m.strength||'',dose:'',unit:'unknown' as const,frequency:m.frequency||'',duration:'',instructions:'',needsReview:true})));
  const [draft,setDraft]=useState({name:'',strength:'',dose:'',unit:'unknown' as Medicine['unit'],frequency:'',duration:'',instructions:''});
  const [busy,setBusy]=useState(false);
  const p=(key:'name'|'age'|'weightKg'|'gender'|'allergies',value:string)=>setPatient(old=>({...old,[key]:value}));
@@ -29,7 +29,7 @@ export default function Manual(){
  <Text style={s.section}>PATIENT DETAILS</Text>
  {input('Patient name',patient.name,v=>p('name',v))}{input('Age',patient.age,v=>p('age',v),'Years')}{input('Weight',patient.weightKg,v=>p('weightKg',v),'kg')}{input('Gender',patient.gender,v=>p('gender',v))}{input('Allergies',patient.allergies,v=>p('allergies',v),'Known allergies or unknown')}
  <Text style={s.section}>PRESCRIBED MEDICINES</Text>
- {input('Medicine name',draft.name,v=>setDraft(o=>({...o,name:v})))}{input('Strength',draft.strength,v=>setDraft(o=>({...o,strength:v})))}{input('Dose',draft.dose,v=>setDraft(o=>({...o,dose:v})))}{input('Unit (mg, mcg, g, mL)',draft.unit,v=>setDraft(o=>({...o,unit:(['mg','mcg','g','mL'].includes(v)?v:'unknown') as Medicine['unit']})))}{input('Frequency',draft.frequency,v=>setDraft(o=>({...o,frequency:v})))}{input('Duration',draft.duration,v=>setDraft(o=>({...o,duration:v})))}{input('Instructions',draft.instructions,v=>setDraft(o=>({...o,instructions:v})))}
+ {input('Medicine prescribed or currently taking',draft.name,v=>setDraft(o=>({...o,name:v})))}{input('Strength',draft.strength,v=>setDraft(o=>({...o,strength:v})))}{input('Dose',draft.dose,v=>setDraft(o=>({...o,dose:v})))}{input('Unit (mg, mcg, g, mL)',draft.unit,v=>setDraft(o=>({...o,unit:(['mg','mcg','g','mL'].includes(v)?v:'unknown') as Medicine['unit']})))}{input('Frequency',draft.frequency,v=>setDraft(o=>({...o,frequency:v})))}{input('Duration',draft.duration,v=>setDraft(o=>({...o,duration:v})))}{input('Instructions',draft.instructions,v=>setDraft(o=>({...o,instructions:v})))}
  <Pressable style={s.outline} onPress={add}><Text style={s.outlineText}>＋ Add medicine</Text></Pressable>
  {meds.map(m=><View key={m.id} style={s.med}><Text style={s.medTitle}>{m.name}</Text><Text style={s.caption}>{m.strength||'Strength not detected'} · {m.frequency||'Frequency not detected'}</Text><Text style={s.flag}>OCR candidate — verify before continuing</Text></View>)}
  <Pressable style={s.button} onPress={next}><Text style={s.buttonText}>Continue to interaction report →</Text></Pressable>
