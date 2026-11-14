@@ -32,4 +32,5 @@ jobs:
             echo "Missing EXPO_TOKEN. Add it in GitHub repository Settings > Secrets and variables > Actions."
             exit 1
           fi
+          eas init --force --non-interactive
           eas build --platform android --profile development --non-interactive --wait
