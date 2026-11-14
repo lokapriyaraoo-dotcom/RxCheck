@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, Alert, Image, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
+import { Brand } from '../components/Brand';
 import { readPrescriptionImage, validateImageBytes } from '../services/ocr';
 
 export default function Scan() {
@@ -45,6 +46,7 @@ export default function Scan() {
   return (
     <ScrollView contentContainerStyle={s.page}>
       <Link href="/" style={s.back}>‹ Home</Link>
+      <Brand size={38} />
       <Text style={s.title}>Prescription scan</Text>
       <Text style={s.copy}>Capture a clear, well-lit image or select up to five pages. Keep the entire prescription flat and in frame.</Text>
       <Pressable disabled={busy} style={s.primary} onPress={() => choose('camera')}><Text style={s.primaryText}>Take photo & read prescription</Text></Pressable>
