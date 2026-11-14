@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Alert, Image, ScrollView, ActivityIn
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
-import { readPrescriptionImage, validateImageBytes } from '../services/ocr';
+import { readPrescriptionImage, validateImageBytes, extractPatientDetails, extractMedicineCandidates } from '../services/ocr';
 
 export default function Scan() {
   const router = useRouter();
@@ -54,7 +54,7 @@ export default function Scan() {
       {busy && <View style={s.progress}><ActivityIndicator color="#0E6E63" /><Text style={s.copy}>Reading prescription text on this device with Google ML Kit…</Text></View>}
       {images.map((uri, i) => <Image key={`${uri}-${i}`} source={{ uri }} style={s.preview} />)}
       {recognizedText ? <>
-        <View style={s.warning}><Text style={s.warnTitle}>Prescription read successfully</Text><Text style={s.warnText}>RxCheck will organize detected text into patient and medicine fields using AI on the next screen. Review every value against the original image.</Text></View>
+        <View style={s.warning}><Text style={s.warnTitle}>Prescription text captured</Text><Text style={s.warnText}>{(() => { const patient = extractPatientDetails(recognizedText); const medicines = extractMedicineCandidates(recognizedText); const fields = [patient.name, patient.age, patient.gender, patient.weightKg].filter(Boolean).length; return fields || medicines.length ? 'Detected '+fields+' patient fields and '+medicines.length+' medicine candidates. RxCheck will place detected values into the form on the next screen. Verify all values against the image.' : 'Text was detected, but patient and medicine fields could not be identified reliably. The next screen may need manual correction; do not assume the prescription was read successfully.'; })()}</Text></View>
         <Pressable style={s.primary} onPress={() => Alert.alert('Allow AI prescription autofill?','The extracted prescription text will be sent to the RxCheck secure AI gateway and configured AI provider to fill patient and medicine fields. Continue only if you consent.',[{text:'Cancel',style:'cancel'},{text:'Allow & continue',onPress:()=>router.push({pathname:'/manual',params:{ocrText:recognizedText,aiConsent:'true'}})}])}><Text style={s.primaryText}>Continue — AI autofill patient & medicines →</Text></Pressable>
       </> : <View style={s.warning}><Text style={s.warnTitle}>Important</Text><Text style={s.warnText}>OCR may misread handwriting, medicine names, decimal points or units. If text is unclear, do not guess; ask a pharmacist or prescriber.</Text></View>}
     </ScrollView>
