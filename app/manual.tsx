@@ -16,7 +16,7 @@ export default function Manual() {
   const [draft, setDraft] = useState({ name: '', strength: '', dose: '', unit: 'mg' as Medicine['unit'], frequency: '', duration: '' });
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [exporting, setExporting] = useState(false);
-  const p = (key: keyof Patient, value: string) => setPatient(old => ({ ...old, [key]: value }));
+  const p = (key: 'name' | 'age' | 'weightKg' | 'gender' | 'allergies', value: string) => setPatient(old => ({ ...old, [key]: value }));
 
   function add() {
     if (!draft.name.trim()) { Alert.alert('Medicine name required', 'Enter the medicine name exactly as printed on the prescription.'); return; }
