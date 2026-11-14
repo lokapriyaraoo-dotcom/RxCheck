@@ -1,4 +1,4 @@
-name: Android preview APK (Expo EAS)
+name: Android APK (GitHub Actions)
 
 on:
   push:
@@ -10,7 +10,6 @@ on:
       - "package-lock.json"
       - "app.json"
       - "assets/brand/**"
-      - "eas.json"
       - ".github/workflows/android-eas-build.yml"
   workflow_dispatch:
 
@@ -19,30 +18,43 @@ permissions:
 
 jobs:
   build:
+    name: Build installable Android APK
     runs-on: ubuntu-latest
     steps:
       - name: Check out RxCheck
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 22 LTS
+      - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
-      - name: Install EAS CLI
-        run: npm install --global eas-cli
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --clean
 
-      - name: Build Android preview APK on Expo
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Build installable debug APK
+        working-directory: android
         run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "Missing EXPO_TOKEN. Add it in GitHub repository Settings > Secrets and variables > Actions."
-            exit 1
-          fi
-          npx expo config --json
-          eas init --force --non-interactive
-          eas build --platform android --profile preview --non-interactive --wait
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload RxCheck APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: RxCheck-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
