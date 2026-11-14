@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Alert, Image, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Alert, Image, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
 import { readPrescriptionImage } from '../services/ocr';
@@ -76,7 +76,6 @@ export default function Scan() {
 }
 
 function TextInputShim({ value, onChangeText }: { value: string; onChangeText: (value: string) => void }) {
-  const { TextInput } = require('react-native') as typeof import('react-native');
   return <TextInput multiline value={value} onChangeText={onChangeText} textAlignVertical="top" style={s.ocrText} accessibilityLabel="Recognized prescription text" />;
 }
 
