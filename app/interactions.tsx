@@ -12,7 +12,6 @@ export default function Interactions() {
   const params=useLocalSearchParams<{meds?:string}>();
   const medicines=useMemo(()=>{try{return JSON.parse(typeof params.meds==='string'?params.meds:'[]') as string[]}catch{return []}},[params.meds]);
   const list=medicines.filter(Boolean);
-  const query=encodeURIComponent(list.join(' '));
   const router=useRouter();
   return <ScrollView contentContainerStyle={s.page}>
     <Link href="/" style={s.back}>‹ Home</Link><Brand size={38}/>
