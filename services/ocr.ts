@@ -53,3 +53,15 @@ export async function readPrescriptionImage(uri: string): Promise<OcrResult> {
   }
 }
 export function validateImageBytes(bytes:number,maxBytes=12*1024*1024){return Number.isSafeInteger(bytes)&&bytes>0&&bytes<=maxBytes;}
+
+export function mapGatewayErrorMessage(code: string): string {
+  const messages: Record<string,string> = {
+    NETWORK:'OCR is processed on-device; check that the image is available and try again.',
+    TIMEOUT:'Text recognition took too long. Try a clearer or smaller image.',
+    INVALID_IMAGE:'This image format could not be read. Choose a JPG or PNG image.',
+    TOO_LARGE:'The image is too large. Choose an image under 12 MB.',
+    UNAUTHORIZED:'The OCR native module is not available in this app build.',
+    RATE_LIMIT:'Too many attempts. Please try again later.',
+  };
+  return messages[code] ?? 'Text extraction is unavailable. Please enter details manually.';
+}
