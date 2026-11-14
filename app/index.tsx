@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Animated, Easing } from 'react-native';
 import { Link } from 'expo-router';
+import { Brand } from '../components/Brand';
 
 const teal = '#0E6E63';
 function Action({ href, title, subtitle }: { href: '/scan' | '/manual' | '/history'; title: string; subtitle: string }) {
@@ -27,7 +28,7 @@ function EcgAnimation() {
 export default function Home() {
   return <ScrollView contentContainerStyle={s.page}>
     <Text style={s.kicker}>MEDICATION SAFETY • REVIEW TOOL</Text>
-    <Text style={s.brand}>Rx/<Text style={{color:teal}}>Check</Text></Text>
+    <Brand size={62} />
     <Text style={s.lead}>A clearer second look at a prescription.</Text>
     <EcgAnimation />
     <View style={s.notice}><Text style={s.noticeTitle}>For review, not prescribing</Text><Text style={s.noticeText}>This prototype can help organise prescription details. Always verify OCR and discuss possible risks with a qualified clinician or pharmacist.</Text></View>
