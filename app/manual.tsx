@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
+import { Brand } from '../components/Brand';
 import { emptyPatient, type Medicine, type Patient, type Finding } from '../services/types';
 import { extractPatientDetails } from '../services/ocr';
 import { checkInteractions, doseReview } from '../services/interactions';
@@ -51,6 +52,7 @@ export default function Manual() {
   return (
     <ScrollView contentContainerStyle={s.page}>
       <Link href="/" style={s.back}>‹ Home</Link>
+      <Brand size={38} />
       <Text style={s.title}>Prescription details</Text>
       <Text style={s.caption}>Patient fields detected from the prescription are filled in automatically where clearly labelled. Confirm or correct every field before continuing.</Text>
       {ocrText ? <View style={s.ocrCard}>
