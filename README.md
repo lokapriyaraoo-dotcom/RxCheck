@@ -18,10 +18,10 @@ React Native / Expo Android app starter with on-device Google ML Kit Text Recogn
 
 ## Requirements
 
-- Node.js 22 recommended.
-- Android device for real camera/OCR testing.
-- EAS account for cloud builds.
-- Expo SDK 54 / React Native 0.81.
+- **Node.js 22 (LTS)** and npm. The project declares Node.js 22 or newer as its supported runtime.
+- **Android phone or tablet** for end-to-end camera capture and on-device ML Kit OCR testing. An emulator can be used for UI checks, but a physical device is recommended for camera/OCR validation.
+- **Expo account with EAS access** for cloud builds. Install the EAS CLI and sign in before starting a cloud build; local app development and CI checks do not require an EAS account.
+- **Expo SDK 54 / React Native 0.81** are pinned by the project dependencies; do not independently upgrade one without checking Expo SDK compatibility.
 
 ## Install and run
 
@@ -34,12 +34,13 @@ npx expo-doctor
 
 The ML Kit native module does **not** run in Expo Go. Build a custom development APK:
 
-```npm install -g eas-cli
+```bash
+npm install -g eas-cli
 eas login
 eas build --profile development --platform android
 ```
 
-Install the generated APK on your Android phone, then start Metro:
+Install the generated development APK on your Android phone. Keep the phone and development computer on the same network, then start Metro:
 
 ```bash
 npx expo start --dev-client
