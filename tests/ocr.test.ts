@@ -44,4 +44,24 @@ describe('prescription field extraction', () => {
     expect(meds[0]).toMatchObject({name:'Paracetamol',strength:'500 mg',dose:'500 mg',frequency:'Every 2 hours',instructions:'Route: Oral'});
     expect(meds[2]).toMatchObject({name:'Primaquine',strength:'7.5 mg',dose:'15 mg'});
   });
+
+  it('extracts patient and medicine fields from a multi-line hospital prescription OCR sample', () => {
+    const text = [
+      'Weight','Patient Name : Rahul Sharma','Age / Sex : 25 years / Male',': 60 kg',
+      'Presenting Complaints:','Fever (102F), chills and sweating',
+      'S.No.','R Prescription','ABC GENERAL HOSPITAL','Drug Name',
+      'Paracetamol','Chloroquine','Primaquine','Ibuprofen','Povidone-iodine','6 Tetanus vaccine',
+      'Additional Instructions:','Investigations Advised:',
+      'Strength','500 mg','250 mg','7.5 mg','400 mg','5%',
+      'Prescribed Dose','500 mg','500 mg','15 mg','800 mg',
+      'Frequency','Every 2 hours','Three times daily','Daily','Three times daily',
+      'Route','Oral','Oral','Oral','Oral'
+    ].join('\n');
+    expect(extractPatientDetails(text)).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
+    const meds=extractMedicineCandidates(text);
+    expect(meds.length).toBeGreaterThanOrEqual(4);
+    expect(meds[0]).toMatchObject({name:'Paracetamol',strength:'500 mg',dose:'500 mg',frequency:'Every 2 hours'});
+    expect(meds[2]).toMatchObject({name:'Primaquine',strength:'7.5 mg',dose:'15 mg'});
+  });
+
 });
