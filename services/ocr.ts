@@ -5,37 +5,79 @@ export const OCR_REVIEW_WARNING = 'OCR can misread handwriting, medicine names, 
 
 export function extractPatientDetails(text: string): Partial<Patient> {
   const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  const valueFor = (patterns: RegExp[]): string => {
+  const find = (patterns: RegExp[]): string => {
     for (const line of lines) for (const pattern of patterns) {
       const value = line.match(pattern)?.[1]?.trim().replace(/[|]+$/g, '').trim();
-      if (value && value.length < 80) return value;
+      if (value && value.length < 100) return value;
     }
     return '';
   };
-  const name = valueFor([/^(?:patient\s*)?name\s*[:：-]\s*(.+)$/i, /^patient\s*[:：-]\s*(.+)$/i]);
-  const age = valueFor([/^(?:patient\s*)?age\s*[:：-]\s*(\d{1,3})(?:\s*(?:years?|yrs?|y))?\b/i]);
-  const weightKg = valueFor([/^(?:body\s*)?weight\s*[:：-]\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)?\b/i]);
-  const gender = valueFor([/^(?:sex|gender)\s*[:：-]\s*(male|female|other)\b/i]);
+  const name = find([/^(?:patient\s*)?name\s*[:：-]\s*(.+)$/i, /^patient\s*[:：-]\s*(.+)$/i]);
+  const ageSex = find([/^(?:age\s*\/\s*sex|age\s+and\s+sex)\s*[:：-]\s*(.+)$/i]);
+  const age = find([/^(?:patient\s*)?age\s*[:：-]\s*(\d{1,3})(?:\s*(?:years?|yrs?|y))?\b/i]) || ageSex.match(/\b(\d{1,3})\s*(?:years?|yrs?|y)\b/i)?.[1] || '';
+  const gender = find([/^(?:sex|gender)\s*[:：-]\s*(male|female|other)\b/i]) || ageSex.match(/\b(male|female|other)\b/i)?.[1] || '';
+  let weightKg = find([/^(?:body\s*)?weight\s*[:：-]\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)?\b/i, /^:\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i]);
+  if (!weightKg) {
+    const wi = lines.findIndex(x => /^(?:body\s*)?weight\s*:?$/i.test(x));
+    if (wi >= 0 && lines[wi + 1]) weightKg = lines[wi + 1].match(/(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i)?.[1] || '';
+  }
   return { ...(name ? {name} : {}), ...(age ? {age} : {}), ...(weightKg ? {weightKg} : {}), ...(gender ? {gender: gender[0].toUpperCase()+gender.slice(1).toLowerCase()} : {}) };
 }
 
-/** Conservative candidates only: every extracted medicine remains unverified until the user confirms it. */
+/** Reconstructs OCR table columns only when a clear Drug Name heading is present. */
 export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
-  const seen = new Set<string>();
+  const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  const headers: Record<string, RegExp> = {
+    name: /^(?:drug\s*name|medicine\s*name|medication)\s*:?$/i,
+    strength: /^strength\s*:?$/i,
+    dose: /^(?:prescribed\s*)?dose\s*:?$/i,
+    frequency: /^frequency\s*:?$/i,
+    route: /^route\s*:?$/i,
+    duration: /^duration\s*:?$/i,
+    instructions: /^(?:additional\s*)?instructions?\s*:?$/i,
+  };
+  const columns: Record<string,string[]> = {name:[],strength:[],dose:[],frequency:[],route:[],duration:[],instructions:[]};
+  let active = '';
+  for (const raw of lines) {
+    const line = raw.replace(/^\s*(?:\d+[.)]|[-•*])\s*/, '').trim();
+    if (!line || /^(?:s\.?\s*no\.?|serial\s*no\.?)$/i.test(line)) continue;
+    const header = Object.entries(headers).find(([,pattern])=>pattern.test(line));
+    if (header) { active = header[0]; continue; }
+    if (/^(?:additional\s+)?instructions?\s+advised:?$/i.test(line) || /^(?:investigations?\s+advised|presenting complaints|provisional diagnosis|hospital|consultant|reg\.?\s*no\.?|date)\b/i.test(line)) { active=''; continue; }
+    if (active && !/^(?:oral|topical|im|iv|sc|s\.c\.)$/i.test(line) && active==='name' && /^(?:prescription|r\s*prescription)$/i.test(line)) continue;
+    if (active) columns[active].push(line);
+  }
+  const tableNames = columns.name.filter(x => !/^(?:drug\s*name|name)$/i.test(x));
   const out: Partial<Medicine>[] = [];
-  for (const raw of text.split(/\r?\n/)) {
-    const line = raw.trim().replace(/^\s*(?:\d+[.)]|[-•*])\s*/, '');
-    if (!line || /^(patient|name|age|sex|gender|date|doctor|hospital|address|diagnosis|rx|prescription)\b/i.test(line)) continue;
-    const match = line.match(/^([A-Za-z][A-Za-z0-9+()./-]*(?:\s+[A-Za-z][A-Za-z0-9+()./-]*){0,3})\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|mL|iu|%))\b(.*)$/i);
-    if (!match) continue;
-    const key = match[1].toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({name: match[1], strength: match[2].trim(), dose: '', unit: 'unknown', frequency: match[3].trim(), duration: '', instructions: '', needsReview: true});
+  if (tableNames.length) {
+    for (let i=0;i<tableNames.length;i++) {
+      const name=tableNames[i].replace(/^\d+\s+/,'').trim();
+      if (!name || /^(?:abc|general|hospital|care today|healthier tomorrow)/i.test(name)) continue;
+      out.push({
+        name,
+        strength: columns.strength[i] || '',
+        dose: columns.dose[i] || '',
+        unit: 'unknown',
+        frequency: columns.frequency[i] || '',
+        duration: columns.duration[i] || '',
+        instructions: [columns.route[i] ? 'Route: '+columns.route[i] : '', columns.instructions[i] || ''].filter(Boolean).join(' · '),
+        needsReview: true
+      });
+    }
+  }
+  // Fallback for OCR engines that return each medicine and strength on one line.
+  if (!out.length) {
+    const seen = new Set<string>();
+    for (const raw of lines) {
+      const line = raw.trim().replace(/^\s*(?:\d+[.)]|[-•*])\s*/, '');
+      const match = line.match(/^([A-Za-z][A-Za-z0-9+()./-]*(?:\s+[A-Za-z][A-Za-z0-9+()./-]*){0,3})\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|mL|iu|%))\b(.*)$/i);
+      if (!match) continue;
+      const key=match[1].toLowerCase(); if(seen.has(key))continue; seen.add(key);
+      out.push({name:match[1],strength:match[2].trim(),dose:'',unit:'unknown',frequency:match[3].trim(),duration:'',instructions:'',needsReview:true});
+    }
   }
   return out;
 }
-
 export async function readPrescriptionImage(uri: string): Promise<OcrResult> {
   if (!uri || !/^(file|content):\/\//i.test(uri)) throw new Error('The selected image URI is invalid. Please choose it again.');
   try {
