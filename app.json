@@ -27,14 +27,6 @@
         {
           "iosEngine": "vision"
         }
-      ],
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/brand/rxcheck-icon.png",
-          "imageWidth": 160,
-          "backgroundColor": "#F5FAF8"
-        }
       ]
     ],
     "android": {
@@ -51,6 +43,11 @@
     "experiments": {
       "typedRoutes": true
     },
-    "icon": "./assets/brand/rxcheck-icon.png"
+    "icon": "./assets/brand/rxcheck-icon.png",
+    "splash": {
+      "image": "./assets/brand/rxcheck-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F5FAF8"
+    }
   }
 }
