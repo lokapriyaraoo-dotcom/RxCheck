@@ -28,7 +28,7 @@ Paste the OmniRoute endpoint key only when Wrangler prompts for it. In Cloudflar
 
 Set `OMNIROUTE_API_KEY` as an encrypted secret, not a plain variable.
 
-**Protect the public Worker endpoint:** configure Cloudflare rate limiting/WAF rules for `POST /analyze` and monitor usage. The Worker limits input size but the endpoint is publicly reachable; CORS is not authentication.
+**Protect the public Worker endpoint:** configure Cloudflare rate limiting/WAF rules for `POST /analyze` and `POST /extract` and monitor usage. The Worker limits input size but the endpoint is publicly reachable; CORS is not authentication.
 
 ## 3. Connect the Android build
 
@@ -40,6 +40,6 @@ Run the Android APK workflow again. It injects this public proxy URL into the ap
 
 ## What the AI feature does and does not do
 
-The manual details page has a **Review prescription with Claude AI** action. Before sending, the app asks for consent. The AI can summarize supplied text and flag unclear fields for human review. It does not perform validated drug-interaction checking, confirm FDA approval, diagnose, prescribe, or recommend substitutions. Continue to use the linked clinical interaction checkers and ask a pharmacist/prescriber to review findings.
+The prescription flow sends on-device Google ML Kit OCR text to `POST /extract` so the configured AI model can organize patient demographics and medicine names, strengths, doses, frequency, duration, route and instructions into form fields. The app does not show the raw editable OCR transcript. The manual details page also has a **Review prescription with Claude AI** action. Before AI processing, the user should be informed that prescription text is sent to the configured Worker/OmniRoute/provider. It does not perform validated drug-interaction checking, confirm FDA approval, diagnose, prescribe, or recommend substitutions. Continue to use the linked clinical interaction checkers and ask a pharmacist/prescriber to review findings.
 
 Prescription and patient information is sent to the configured Worker/OmniRoute/provider when the user consents. Use only a provider and deployment whose data handling is appropriate for the information being processed.
