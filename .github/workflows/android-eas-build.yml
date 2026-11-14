@@ -1,4 +1,4 @@
-name: Android development APK (Expo EAS)
+name: Android preview APK (Expo EAS)
 
 on:
   workflow_dispatch:
@@ -33,4 +33,4 @@ jobs:
             exit 1
           fi
           eas init --force --non-interactive
-          eas build --platform android --profile development --non-interactive --wait
+          eas build --platform android --profile preview --non-interactive --wait
