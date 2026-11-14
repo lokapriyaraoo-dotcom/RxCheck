@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { emptyPatient, type Medicine, type Patient, type Finding } from '../services/types';
+import { extractPatientDetails } from '../services/ocr';
 import { checkInteractions, doseReview } from '../services/interactions';
 import { exportSafetyReport } from '../services/report';
 
@@ -18,7 +19,8 @@ function Choice({ label, value, onChange }: { label: string; value: boolean; onC
 export default function Manual() {
   const params = useLocalSearchParams<{ ocrText?: string }>();
   const ocrText = typeof params.ocrText === 'string' ? params.ocrText : '';
-  const [patient, setPatient] = useState<Patient>(emptyPatient);
+  const extractedPatient = useMemo(() => extractPatientDetails(ocrText), [ocrText]);
+  const [patient, setPatient] = useState<Patient>(() => ({ ...emptyPatient, ...extractedPatient }));
   const [meds, setMeds] = useState<Medicine[]>([]);
   const [draft, setDraft] = useState({ name: '', strength: '', dose: '', unit: 'mg' as Medicine['unit'], frequency: '', duration: '', instructions: '' });
   const [findings, setFindings] = useState<Finding[] | null>(null);
@@ -32,13 +34,11 @@ export default function Manual() {
     setDraft({ name: '', strength: '', dose: '', unit: 'mg', frequency: '', duration: '', instructions: '' });
     setFindings(null);
   }
-
   function analyze() {
     const next = [...meds.flatMap(doseReview), ...checkInteractions(meds)];
     setFindings(next);
     Alert.alert('Review summary', `${meds.length} medicine(s) entered. ${next.length} review item(s) remain. No “safe” conclusion can be made by this prototype.`);
   }
-
   async function exportReport() {
     if (!findings) { Alert.alert('Review first', 'Tap Review entries before exporting the report.'); return; }
     setExporting(true);
@@ -46,18 +46,17 @@ export default function Manual() {
     catch { Alert.alert('Export failed', 'The PDF could not be created on this device. Please try again.'); }
     finally { setExporting(false); }
   }
-
   const reviewLabel = useMemo(() => findings ? `${findings.length} item(s) require human review` : 'Not reviewed yet', [findings]);
 
   return (
     <ScrollView contentContainerStyle={s.page}>
       <Link href="/" style={s.back}>‹ Home</Link>
-      <Text style={s.title}>Manual verification</Text>
-      <Text style={s.caption}>Enter medicine details exactly as prescribed. OCR suggestions are not copied into medicine fields automatically.</Text>
+      <Text style={s.title}>Prescription details</Text>
+      <Text style={s.caption}>Patient fields detected from the prescription are filled in automatically where clearly labelled. Confirm or correct every field before continuing.</Text>
       {ocrText ? <View style={s.ocrCard}>
-        <Text style={s.section}>RAW OCR TEXT — CHECK AGAINST IMAGE</Text>
+        <Text style={s.section}>PRESCRIPTION TEXT — OCR TRANSCRIPTION</Text>
         <Text style={s.ocrText}>{ocrText}</Text>
-        <Text style={s.caption}>Use this only as a reading aid. Confirm each character, especially similar medicine names, strength, decimal points and units.</Text>
+        <Text style={s.caption}>This transcription preserves the recognized wording and line breaks. Compare it with the original image; unclear text must not be guessed.</Text>
       </View> : null}
       <Text style={s.section}>PATIENT DETAILS</Text>
       {input('Name', patient.name, v => p('name', v))}
@@ -94,7 +93,6 @@ export default function Manual() {
     </ScrollView>
   );
 }
-
 const s = StyleSheet.create({
   page: { padding: 22, paddingTop: 48, gap: 13 },
   back: { color: '#0E6E63', fontWeight: '700' },
