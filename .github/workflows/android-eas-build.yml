@@ -9,6 +9,7 @@ on:
       - "package.json"
       - "package-lock.json"
       - "app.json"
+      - "assets/brand/**"
       - "eas.json"
       - ".github/workflows/android-eas-build.yml"
   workflow_dispatch:
