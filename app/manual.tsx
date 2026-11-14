@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Brand } from '../components/Brand';
 import { emptyPatient, type Medicine, type Patient } from '../services/types';
 import { extractPatientDetails, extractMedicineCandidates, readPrescriptionImage } from '../services/ocr';
+import { askClaudeToReview } from '../services/ai';
 
 const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')=><View style={{gap:5}}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChange} placeholder={placeholder} style={s.input}/></View>;
 export default function Manual(){
@@ -16,6 +17,8 @@ export default function Manual(){
  const [draft,setDraft]=useState({name:'',strength:'',dose:'',unit:'unknown' as Medicine['unit'],frequency:'',duration:'',instructions:''});
  const [busy,setBusy]=useState(false);
  const [currentMedsText,setCurrentMedsText]=useState('');
+ const [aiBusy,setAiBusy]=useState(false);const [aiReview,setAiReview]=useState('');
+ async function reviewWithClaude(){if(!ocrText.trim()&&!meds.length){Alert.alert('Add prescription details','Scan a prescription or enter medicines first.');return;}setAiBusy(true);setAiReview('');try{const result=await askClaudeToReview({prescriptionText:ocrText,patient,medicines:meds.map(m=>({name:m.name,strength:m.strength,dose:m.dose,frequency:m.frequency,duration:m.duration})),otherMedicines:currentMedsText});setAiReview(result);}catch(e){Alert.alert('Claude review unavailable',e instanceof Error?e.message:'Please try again later.');}finally{setAiBusy(false);}}
  const p=(key:'name'|'age'|'weightKg'|'gender'|'allergies',value:string)=>setPatient(old=>({...old,[key]:value}));
  async function attachPrescription(){
   const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],quality:0.9});
@@ -36,6 +39,8 @@ export default function Manual(){
  <Text style={s.section}>OTHER MEDICINES CURRENTLY TAKEN</Text>
  <Text style={s.caption}>Include regular medicines, OTC painkillers, vitamins and supplements. Separate names with commas or new lines.</Text>
  <TextInput multiline value={currentMedsText} onChangeText={setCurrentMedsText} placeholder="e.g. metformin 500 mg, aspirin 75 mg" textAlignVertical="top" style={[s.input,{minHeight:90}]}/>
+ <Pressable style={[s.outline,{backgroundColor:'#EEF7F4'}]} onPress={reviewWithClaude} disabled={aiBusy}><Text style={s.outlineText}>{aiBusy?'Asking Claude…':'✦ Review prescription with Claude AI'}</Text></Pressable>
+ {aiReview?<View style={s.ocrCard}><Text style={s.section}>CLAUDE AI REVIEW — VERIFY WITH A CLINICIAN</Text><Text style={s.caption}>{aiReview}</Text></View>:null}
  <Pressable style={s.button} onPress={next}><Text style={s.buttonText}>Continue to interaction report →</Text></Pressable>
  <Text style={s.foot}>OCR candidates are not confirmed prescriptions. This page does not validate dose, strength or whether a medicine is appropriate.</Text>
  </ScrollView>;
