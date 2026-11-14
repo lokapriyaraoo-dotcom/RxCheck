@@ -27,6 +27,14 @@
         {
           "iosEngine": "vision"
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/rxcheck-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#F5FAF8"
+        }
       ]
     ],
     "android": {
@@ -34,10 +42,15 @@
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/brand/rxcheck-icon.png",
+        "backgroundColor": "#117F74"
+      }
     },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/brand/rxcheck-icon.png"
   }
 }
