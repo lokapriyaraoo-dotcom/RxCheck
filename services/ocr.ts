@@ -25,7 +25,14 @@ export function extractPatientDetails(text: string): Partial<Patient> {
   let weightKg = first([/(?:body\s*)?weight\s*:?\s*(?:\n\s*)?:?\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i]);
   if (!weightKg) {
     const wi = lines.findIndex(x => /^(?:body\s*)?weight\s*:?\s*$/i.test(x));
-    if (wi >= 0) weightKg = lines.slice(wi + 1, wi + 3).join(' ').match(/(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i)?.[1] || '';
+    // OCR may read the Weight label before patient name and age, and its value several lines later.
+    if (wi >= 0) {
+      for (const candidate of lines.slice(wi + 1, wi + 7)) {
+        const match = candidate.match(/^:?\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i);
+        if (match) { weightKg = match[1]; break; }
+        if (/^(?:presenting complaints|diagnosis|drug name|medicine name)\b/i.test(candidate)) break;
+      }
+    }
   }
   const allergies = first([/(?:known\s*)?allergies?\s*:\s*([^\n]+)/i]);
   return {
