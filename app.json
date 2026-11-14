@@ -9,16 +9,23 @@
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Rx/Check to photograph a prescription for text extraction."
+          "cameraPermission": "Allow Rx/Check to photograph a prescription for on-device text recognition."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Rx/Check to select a prescription image for text extraction."
+          "photosPermission": "Allow Rx/Check to select a prescription image for on-device text recognition."
+        }
+      ],
+      [
+        "expo-mlkit-ocr",
+        {
+          "iosEngine": "vision"
         }
       ]
     ],
