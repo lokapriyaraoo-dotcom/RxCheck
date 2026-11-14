@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert, ImagePickerIOS } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Brand } from '../components/Brand';
@@ -29,7 +29,7 @@ export default function Manual(){
  <Text style={s.section}>PATIENT DETAILS</Text>
  {input('Patient name',patient.name,v=>p('name',v))}{input('Age',patient.age,v=>p('age',v),'Years')}{input('Weight',patient.weightKg,v=>p('weightKg',v),'kg')}{input('Gender',patient.gender,v=>p('gender',v))}{input('Allergies',patient.allergies,v=>p('allergies',v),'Known allergies or unknown')}
  <Text style={s.section}>PRESCRIBED MEDICINES</Text>
- {input('Medicine name',draft.name,v=>setDraft(o=>({...o,name:v})))}{input('Strength',draft.strength,v=>setDraft(o=>({...o,strength:v})))}{input('Dose',draft.dose,v=>setDraft(o=>({...o,dose:v})))}{input('Unit (mg, mcg, g, mL)',draft.unit,v=>setDraft(o=>({...o,unit:(['mg','mcg','g','mL'].includes(v)?v:'unknown') as Medicine['unit']})))}{input('Frequency',draft.frequency,v=>setDraft(o=>({...o,frequency:v})))}{input('Duration',draft.duration,v=>setDraft(o=>({...o,duration:v})))}{input('Instructions',draft.instructions,v=>setDraft(o=>({...o,instructions:v}))}
+ {input('Medicine name',draft.name,v=>setDraft(o=>({...o,name:v})))}{input('Strength',draft.strength,v=>setDraft(o=>({...o,strength:v})))}{input('Dose',draft.dose,v=>setDraft(o=>({...o,dose:v})))}{input('Unit (mg, mcg, g, mL)',draft.unit,v=>setDraft(o=>({...o,unit:(['mg','mcg','g','mL'].includes(v)?v:'unknown') as Medicine['unit']})))}{input('Frequency',draft.frequency,v=>setDraft(o=>({...o,frequency:v})))}{input('Duration',draft.duration,v=>setDraft(o=>({...o,duration:v})))}{input('Instructions',draft.instructions,v=>setDraft(o=>({...o,instructions:v})))}
  <Pressable style={s.outline} onPress={add}><Text style={s.outlineText}>＋ Add medicine</Text></Pressable>
  {meds.map(m=><View key={m.id} style={s.med}><Text style={s.medTitle}>{m.name}</Text><Text style={s.caption}>{m.strength||'Strength not detected'} · {m.frequency||'Frequency not detected'}</Text><Text style={s.flag}>OCR candidate — verify before continuing</Text></View>)}
  <Pressable style={s.button} onPress={next}><Text style={s.buttonText}>Continue to interaction report →</Text></Pressable>
