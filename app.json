@@ -1,11 +1,12 @@
 {
   "expo": {
-    "name": "Rx/Check",
+    "name": "RxCheck",
     "slug": "rx-check",
     "scheme": "rxcheck",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/brand/rxcheck-icon.svg",
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
