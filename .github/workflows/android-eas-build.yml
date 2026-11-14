@@ -1,6 +1,16 @@
 name: Android preview APK (Expo EAS)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "services/**"
+      - "package.json"
+      - "package-lock.json"
+      - "app.json"
+      - "eas.json"
+      - ".github/workflows/android-eas-build.yml"
   workflow_dispatch:
 
 permissions:
@@ -24,7 +34,7 @@ jobs:
       - name: Install EAS CLI
         run: npm install --global eas-cli
 
-      - name: Build Android development APK on Expo
+      - name: Build Android preview APK on Expo
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
