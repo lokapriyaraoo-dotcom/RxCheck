@@ -12,7 +12,7 @@ export async function askClaudeToReview(input: ClaudeReviewInput): Promise<strin
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   try {
-    const response = await fetch(`${endpoint.replace(/\\/$/, '')}/analyze`, {
+    const response = await fetch(`${endpoint.replace(/\/$/, '')}/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
