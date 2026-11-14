@@ -4,29 +4,41 @@ export type OcrResult = { text: string; lines: string[]; engine: 'Google ML Kit 
 export const OCR_REVIEW_WARNING = 'OCR can misread handwriting, medicine names, decimal points and units. Verify every character against the original prescription.';
 
 export function extractPatientDetails(text: string): Partial<Patient> {
-  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-  const find = (patterns: RegExp[]): string => {
-    for (const line of lines) for (const pattern of patterns) {
-      const value = line.match(pattern)?.[1]?.trim().replace(/[|]+$/g, '').trim();
+  const normalized = text.replace(/\u00a0/g, ' ').replace(/[：]/g, ':');
+  const lines = normalized.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const whole = lines.join('\n');
+  const first = (patterns: RegExp[]): string => {
+    for (const pattern of patterns) {
+      const match = whole.match(pattern);
+      const value = match?.[1]?.replace(/\s+/g, ' ').trim();
       if (value && value.length < 100) return value;
     }
     return '';
   };
-  const name = find([/^(?:patient\s*)?name\s*[:：-]\s*(.+)$/i, /^patient\s*[:：-]\s*(.+)$/i]);
-  const ageSex = find([/^(?:age\s*\/\s*sex|age\s+and\s+sex)\s*[:：-]\s*(.+)$/i]);
-  const age = find([/^(?:patient\s*)?age\s*[:：-]\s*(\d{1,3})(?:\s*(?:years?|yrs?|y))?\b/i]) || ageSex.match(/\b(\d{1,3})\s*(?:years?|yrs?|y)\b/i)?.[1] || '';
-  const gender = find([/^(?:sex|gender)\s*[:：-]\s*(male|female|other)\b/i]) || ageSex.match(/\b(male|female|other)\b/i)?.[1] || '';
-  let weightKg = find([/^(?:body\s*)?weight\s*[:：-]\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)?\b/i, /^:\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i]);
+  const name = first([
+    /(?:patient\s*)?name\s*:\s*([A-Za-z][A-Za-z .'-]{1,70})/i,
+    /patient\s*:\s*([A-Za-z][A-Za-z .'-]{1,70})/i
+  ]);
+  const ageSex = first([/age\s*\/\s*sex\s*:\s*([^\n]+)/i, /age\s+and\s+sex\s*:\s*([^\n]+)/i]);
+  const age = first([/(?:patient\s*)?age\s*:\s*(\d{1,3})\s*(?:years?|yrs?|y)?\b/i]) || ageSex.match(/\b(\d{1,3})\s*(?:years?|yrs?|y)\b/i)?.[1] || '';
+  const gender = first([/(?:sex|gender)\s*:\s*(male|female|other)\b/i]) || ageSex.match(/\b(male|female|other)\b/i)?.[1] || '';
+  let weightKg = first([/(?:body\s*)?weight\s*:?\s*(?:\n\s*)?:?\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i]);
   if (!weightKg) {
-    const wi = lines.findIndex(x => /^(?:body\s*)?weight\s*:?$/i.test(x));
-    if (wi >= 0 && lines[wi + 1]) weightKg = lines[wi + 1].match(/(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i)?.[1] || '';
+    const wi = lines.findIndex(x => /^(?:body\s*)?weight\s*:?\s*$/i.test(x));
+    if (wi >= 0) weightKg = lines.slice(wi + 1, wi + 3).join(' ').match(/(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i)?.[1] || '';
   }
-  return { ...(name ? {name} : {}), ...(age ? {age} : {}), ...(weightKg ? {weightKg} : {}), ...(gender ? {gender: gender[0].toUpperCase()+gender.slice(1).toLowerCase()} : {}) };
+  const allergies = first([/(?:known\s*)?allergies?\s*:\s*([^\n]+)/i]);
+  return {
+    ...(name ? {name} : {}), ...(age ? {age} : {}),
+    ...(weightKg ? {weightKg} : {}),
+    ...(gender ? {gender: gender[0].toUpperCase()+gender.slice(1).toLowerCase()} : {}),
+    ...(allergies ? {allergies} : {})
+  };
 }
 
-/** Reconstructs OCR table columns only when a clear Drug Name heading is present. */
+/** Extracts medicines from both row-wise and column-wise OCR layouts. */
 export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
-  const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  const lines = text.replace(/\u00a0/g, ' ').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
   const headers: Record<string, RegExp> = {
     name: /^(?:drug\s*name|medicine\s*name|medication)\s*:?$/i,
     strength: /^strength\s*:?$/i,
@@ -44,32 +56,42 @@ export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
     const header = Object.entries(headers).find(([,pattern])=>pattern.test(line));
     if (header) { active = header[0]; continue; }
     if (/^(?:additional\s+)?instructions?\s+advised:?$/i.test(line) || /^(?:investigations?\s+advised|presenting complaints|provisional diagnosis|hospital|consultant|reg\.?\s*no\.?|date)\b/i.test(line)) { active=''; continue; }
-    if (active && !/^(?:oral|topical|im|iv|sc|s\.c\.)$/i.test(line) && active==='name' && /^(?:prescription|r\s*prescription)$/i.test(line)) continue;
+    if (active === 'name' && /^(?:prescription|r\s*prescription)$/i.test(line)) continue;
     if (active) columns[active].push(line);
   }
-  const tableNames = columns.name.filter(x => !/^(?:drug\s*name|name)$/i.test(x));
   const out: Partial<Medicine>[] = [];
+  const tableNames = columns.name
+    .map(x => x.replace(/^\d+\s+/, '').trim())
+    .filter(x => x && !/^(?:drug\s*name|name|abc|general|hospital|care today|healthier tomorrow)$/i.test(x));
   if (tableNames.length) {
     for (let i=0;i<tableNames.length;i++) {
-      const name=tableNames[i].replace(/^\d+\s+/,'').trim();
-      if (!name || /^(?:abc|general|hospital|care today|healthier tomorrow)/i.test(name)) continue;
+      const name=tableNames[i];
+      if (/^(?:additional|investigations|presenting|provisional)/i.test(name)) continue;
       out.push({
-        name,
-        strength: columns.strength[i] || '',
-        dose: columns.dose[i] || '',
-        unit: 'unknown',
-        frequency: columns.frequency[i] || '',
+        name, strength: columns.strength[i] || '', dose: columns.dose[i] || '',
+        unit: 'unknown', frequency: columns.frequency[i] || '',
         duration: columns.duration[i] || '',
         instructions: [columns.route[i] ? 'Route: '+columns.route[i] : '', columns.instructions[i] || ''].filter(Boolean).join(' · '),
         needsReview: true
       });
     }
   }
-  // Fallback for OCR engines that return each medicine and strength on one line.
+  // Row-wise table fallback: serial number, medicine, strength, dose, frequency and route.
   if (!out.length) {
     const seen = new Set<string>();
     for (const raw of lines) {
-      const line = raw.trim().replace(/^\s*(?:\d+[.)]|[-•*])\s*/, '');
+      const line=raw.replace(/^\s*\d+[.)]?\s+/, '').trim();
+      const match=line.match(/^([A-Za-z][A-Za-z0-9+()./-]*(?:[\s-]+[A-Za-z][A-Za-z0-9+()./-]*){0,3})\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|mL|iu|%))\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|mL|iu|%))\s+(.+?)(?:\s+(oral|topical|im|iv|sc))?$/i);
+      if (!match) continue;
+      const key=match[1].toLowerCase(); if(seen.has(key))continue; seen.add(key);
+      out.push({name:match[1],strength:match[2].trim(),dose:match[3].trim(),unit:'unknown',frequency:match[4].trim(),duration:'',instructions:match[5]?'Route: '+match[5]:'',needsReview:true});
+    }
+  }
+  // Last fallback for lines containing a medicine name followed by a strength.
+  if (!out.length) {
+    const seen = new Set<string>();
+    for (const raw of lines) {
+      const line = raw.replace(/^\s*\d+[.)]?\s+/, '').trim();
       const match = line.match(/^([A-Za-z][A-Za-z0-9+()./-]*(?:\s+[A-Za-z][A-Za-z0-9+()./-]*){0,3})\s+(\d+(?:\.\d+)?\s*(?:mg|mcg|g|ml|mL|iu|%))\b(.*)$/i);
       if (!match) continue;
       const key=match[1].toLowerCase(); if(seen.has(key))continue; seen.add(key);
@@ -84,7 +106,12 @@ export async function readPrescriptionImage(uri: string): Promise<OcrResult> {
     const mlkit = await import('expo-mlkit-ocr');
     if (!mlkit.isSupported()) throw new Error('Google ML Kit OCR is not supported on this device.');
     const result = await mlkit.recognizeText(uri);
-    const text = result.text?.trim() ?? '';
+    const structuredLines = (result.blocks || []).flatMap(block => block.lines || [])
+      .map(line => ({text: String(line.text || '').trim(), y: Number(line.boundingBox?.y ?? 0), x: Number(line.boundingBox?.x ?? 0)}))
+      .filter(line => line.text)
+      .sort((a,b) => Math.abs(a.y-b.y) > 8 ? a.y-b.y : a.x-b.x)
+      .map(line => line.text);
+    const text = (structuredLines.length ? structuredLines.join('\n') : result.text || '').trim();
     if (!text) throw new Error('No readable text was detected. Try a sharper, brighter, straight-on image.');
     return {text, lines:text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean), engine:'Google ML Kit Text Recognition v2', warning:OCR_REVIEW_WARNING};
   } catch (error) {
