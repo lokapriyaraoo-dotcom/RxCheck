@@ -1,3 +1,5 @@
+import type { Patient } from './types';
+
 export type OcrResult = {
   text: string;
   lines: string[];
@@ -9,6 +11,35 @@ export const OCR_REVIEW_WARNING =
   'OCR can misread handwriting, medicine names, decimal points and units. Verify every character against the original prescription before using these details.';
 
 /**
+ * Extracts only explicitly labelled patient fields from the OCR transcript.
+ * This is conservative on-device parsing, not a diagnostic or generative AI model.
+ * Missing or ambiguous fields remain blank for the user to confirm.
+ */
+export function extractPatientDetails(text: string): Partial<Patient> {
+  const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const valueFor = (patterns: RegExp[]): string => {
+    for (const line of lines) {
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        const value = match?.[1]?.trim().replace(/[|]+$/g, '').trim();
+        if (value && value.length < 80) return value;
+      }
+    }
+    return '';
+  };
+  const name = valueFor([/^(?:patient\s*)?name\s*[:：-]\s*(.+)$/i, /^patient\s*[:：-]\s*(.+)$/i]);
+  const ageRaw = valueFor([/^(?:patient\s*)?age\s*[:：-]\s*(\d{1,3})(?:\s*(?:years?|yrs?|y))?\b/i]);
+  const weightRaw = valueFor([/^(?:body\s*)?weight\s*[:：-]\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)?\b/i]);
+  const genderRaw = valueFor([/^(?:sex|gender)\s*[:：-]\s*(male|female|other)\b/i]);
+  return {
+    ...(name ? { name } : {}),
+    ...(ageRaw ? { age: ageRaw } : {}),
+    ...(weightRaw ? { weightKg: weightRaw } : {}),
+    ...(genderRaw ? { gender: genderRaw.charAt(0).toUpperCase() + genderRaw.slice(1).toLowerCase() } : {}),
+  };
+}
+
+/**
  * Runs Google ML Kit locally on the device. No prescription image is uploaded
  * by this function. Native support requires an EAS/custom development build;
  * Expo Go does not contain this native module.
@@ -17,28 +48,16 @@ export async function readPrescriptionImage(uri: string): Promise<OcrResult> {
   if (!uri || !/^(file|content):\/\//i.test(uri)) {
     throw new Error('The selected image URI is invalid. Please choose the image again.');
   }
-
   try {
     const mlkit = await import('expo-mlkit-ocr');
-    if (!mlkit.isSupported()) {
-      throw new Error('Google ML Kit OCR is not supported on this device.');
-    }
+    if (!mlkit.isSupported()) throw new Error('Google ML Kit OCR is not supported on this device.');
     const result = await mlkit.recognizeText(uri);
     const text = result.text?.trim() ?? '';
-    if (!text) {
-      throw new Error('No readable text was detected. Try a sharper, brighter, straight-on image.');
-    }
-    return {
-      text,
-      lines: text.split(/\r?\n/).map(line => line.trim()).filter(Boolean),
-      engine: 'Google ML Kit Text Recognition v2',
-      warning: OCR_REVIEW_WARNING,
-    };
+    if (!text) throw new Error('No readable text was detected. Try a sharper, brighter, straight-on image.');
+    return { text, lines: text.split(/\r?\n/).map(line => line.trim()).filter(Boolean), engine: 'Google ML Kit Text Recognition v2', warning: OCR_REVIEW_WARNING };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
-    if (/not supported|not installed|native module|ExpoMlkitOcr/i.test(message)) {
-      throw new Error('Google ML Kit is unavailable in this app build. Install the Rx/Check development or preview APK; Expo Go is not supported.');
-    }
+    if (/not supported|not installed|native module|ExpoMlkitOcr/i.test(message)) throw new Error('Google ML Kit is unavailable in this app build. Install the Rx/Check development or preview APK; Expo Go is not supported.');
     if (/no readable text/i.test(message)) throw error;
     throw new Error('Could not read this image. Retake it in good light, keep the page flat, or enter the details manually.');
   }
