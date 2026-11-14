@@ -54,11 +54,9 @@ export default function Scan() {
       {busy && <View style={s.progress}><ActivityIndicator color="#0E6E63" /><Text style={s.copy}>Reading prescription text on this device with Google ML Kit…</Text></View>}
       {images.map((uri, i) => <Image key={`${uri}-${i}`} source={{ uri }} style={s.preview} />)}
       {recognizedText ? <>
-        <View style={s.warning}><Text style={s.warnTitle}>Check against the original</Text><Text style={s.warnText}>The text below is the OCR transcription of the prescription. It aims to retain the wording and values detected in the image; OCR can make mistakes, especially with handwriting, medicine names, decimals and units.</Text></View>
-        <Text style={s.label}>Prescription text (editable transcription)</Text>
-        <TextInput multiline value={recognizedText} onChangeText={setRecognizedText} textAlignVertical="top" style={s.ocrText} accessibilityLabel="Prescription OCR transcription" />
-        <Pressable style={s.primary} onPress={() => router.push({ pathname: '/manual', params: { ocrText: recognizedText } })}><Text style={s.primaryText}>Continue with prescription details</Text></Pressable>
-      </> : <View style={s.warning}><Text style={s.warnTitle}>Important</Text><Text style={s.warnText}>OCR may misread handwriting, similar drug names, decimal points or units. If the text is unclear, do not guess; ask a pharmacist or prescriber.</Text></View>}
+        <View style={s.warning}><Text style={s.warnTitle}>Prescription read successfully</Text><Text style={s.warnText}>RxCheck will organize detected text into patient and medicine fields using AI on the next screen. Review every value against the original image.</Text></View>
+        <Pressable style={s.primary} onPress={() => router.push({ pathname: '/manual', params: { ocrText: recognizedText } })}><Text style={s.primaryText}>Continue — AI autofill patient & medicines →</Text></Pressable>
+      </> : <View style={s.warning}><Text style={s.warnTitle}>Important</Text><Text style={s.warnText}>OCR may misread handwriting, medicine names, decimal points or units. If text is unclear, do not guess; ask a pharmacist or prescriber.</Text></View>}
     </ScrollView>
   );
 }
