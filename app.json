@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Rx/Check",
+    "slug": "rx-check",
+    "scheme": "rxcheck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Rx/Check to photograph a prescription for text extraction."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Rx/Check to select a prescription image for text extraction."
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.rxcheck.app",
+      "permissions": [
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
