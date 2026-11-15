@@ -9,8 +9,8 @@ React Native / Expo Android app starter with on-device Google ML Kit Text Recogn
 - Home-first navigation: scanner, manual verification, and history.
 - Camera capture and multi-image gallery selection (up to five images).
 - Google ML Kit Text Recognition v2 via `expo-mlkit-ocr`, running on-device. Images are not sent to an OCR cloud service by this OCR integration.
-- OCR text is displayed for correction and passed to manual entry as a reading aid; it is **not** silently converted into medicine names or doses.
-- Manual patient and medicine entry with explicit unverified status.
+- On-device OCR extracts identifiable patient fields and medicine candidates, then pre-fills a review form. Every extracted value remains unverified until checked against the original.
+- Optional AI structuring through the secure RxCheck gateway, enabled only after explicit consent. The gateway receives OCR text (not the prescription image) and forwards it to the configured provider.
 - Conservative interaction-check placeholder that refuses to declare combinations safe without a validated source.
 - Review findings and PDF export.
 - Vitest checks and GitHub Actions CI.
@@ -58,9 +58,9 @@ EAS prints a build URL when finished. The repository does not contain signing cr
 
 1. Take a photo or select up to five prescription images.
 2. The app calls Google ML Kit Text Recognition v2 locally on the device.
-3. Recognized text is displayed as editable raw text.
-4. The user compares it with the original prescription and manually enters the confirmed medicine name, strength, dose, unit, frequency, and duration.
-5. The report labels entries as unverified and includes a warning that OCR is not clinical verification.
+3. RxCheck extracts identifiable patient details and medicine candidates locally and shows a preview.
+4. The review form is prefilled with those candidates. If the secure AI gateway is configured, the user may separately consent to send OCR text for structured AI extraction; declining keeps processing on-device.
+5. The user verifies or corrects patient, medicine, strength and dose fields against the original prescription before continuing. Extracted values remain unverified.
 
 ML Kit performs text recognition only. It does not understand prescriptions, resolve ambiguous handwriting, calculate safe doses, detect interactions, or determine whether a prescription is appropriate. It may misread drug names, decimal points, units, and handwritten text. If any value is unclear, do not guess.
 
@@ -70,7 +70,9 @@ No validated drug-interaction database is bundled or connected. `services/intera
 
 ## Privacy and security
 
-- OCR is on-device; this code does not upload prescription images for recognition.
+- OCR image recognition runs on-device; the image itself is not uploaded by the scanner.
+- If the user explicitly consents to AI autofill, extracted OCR text is sent to the configured RxCheck gateway and provider. Without consent, text remains on-device.
+- Configure `EXPO_PUBLIC_RXCHECK_AI_URL` in the app build environment with the deployed Worker URL. Keep provider API keys only in the Worker secret store; never add them to the app or repository.
 - This starter does not persist patient records or create a cloud history.
 - PDF sharing is user-initiated and may expose health information to the selected app/person.
 - Do not commit real patient prescriptions, personal health data, API keys, signing files, or credentials.
