@@ -67,7 +67,7 @@ export default function Scan() {
     }
     Alert.alert(
       'Allow AI prescription autofill?',
-      'The extracted prescription text will be sent to the RxCheck secure AI gateway and configured AI provider to fill patient and medicine fields. Continue only if you consent.',
+      'The prescription image will be sent to the RxCheck secure gateway, processed by PaddleOCR-VL for layout and text, then structured by the configured AI provider. Continue only if you consent.',
       [
         {text:'CANCEL',style:'cancel'},
         {text:'ALLOW & CONTINUE',onPress:()=>openReview(true)}
