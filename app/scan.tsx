@@ -86,7 +86,7 @@ export default function Scan() {
     <Text style={s.copy}>Capture a clear, well-lit image or select up to five pages. Keep the entire prescription flat and in frame.</Text>
     <Pressable disabled={busy} style={s.primary} onPress={()=>choose('camera')}><Text style={s.primaryText}>Take photo & read prescription</Text></Pressable>
     <Pressable disabled={busy} style={s.secondary} onPress={()=>choose('library')}><Text style={s.secondaryText}>Choose from gallery</Text></Pressable>
-    {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading printed text on this device with Google ML Kit…</Text></View>}
+    {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading text on this device…</Text></View>}
     {images.map((uri,i)=><Image key={uri+'-'+i} source={{uri}} style={s.preview}/>)}
     {images.length>0&&<Pressable disabled={busy} style={s.secondary} onPress={recognizeHandwriting}><Text style={s.secondaryText}>TRY HANDWRITING OCR (EXPERIMENTAL)</Text></Pressable>}
     {recognizedText?<>
