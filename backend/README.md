@@ -1,43 +1,34 @@
-# RxCheck AI extraction gateway
+# RxCheck prescription OCR gateway
 
-The app uses a Cloudflare Worker gateway. After explicit consent, it sends the prescription image directly to a vision-capable model through the existing OmniRoute-compatible API. The model reads the document image and returns structured patient and medicine fields. No separately hosted PaddleOCR-VL or Google Cloud Vision service is required. The text-only `/extract` endpoint remains available for on-device OCR text fallback.
+RxCheck uses a Cloudflare Worker with Google Cloud Vision DOCUMENT_TEXT_DETECTION to read prescription images. The Google API key stays in a Cloudflare Worker Secret and is never shipped in the Android app or repository.
 
-Claude, ChatGPT, Grok and OmniRoute are development/model-provider tools. The app must not expose separate in-app assistant/review buttons for these tools. Do not put provider API keys in the Android app, Expo public variables, or this repository.
+## Configure Google Cloud Vision
 
-## Configure the AI gateway
+1. In Google Cloud Console, select the RxCheck project and enable **Cloud Vision API**.
+2. Create an API key restricted to **Cloud Vision API**.
+3. In Cloudflare, open the `rxcheck-ai-proxy` Worker → Settings → Variables and Secrets.
+4. Add `GOOGLE_CLOUD_VISION_API_KEY` as a **Secret** and paste the key value.
+5. Save and deploy the Worker.
 
-1. Ensure your OmniRoute account has a model that supports image/vision input and prescription/document image reading. Set `OMNIROUTE_MODEL` to that exact model ID. A text-only model will not work for image autofill.
-2. Configure the OmniRoute-compatible HTTPS base URL and create an API key.
-3. Deploy the Cloudflare Worker from the repository root:
+Do not add OmniRoute settings. The Worker no longer uses OmniRoute.
 
-```sh
-npm install
-npm install -g wrangler
-wrangler login
-wrangler deploy
-wrangler secret put OMNIROUTE_API_KEY
-```
+## Endpoints
 
-4. In Cloudflare Worker settings, configure:
-   - `OMNIROUTE_BASE_URL`: HTTPS base URL for the OmniRoute endpoint, without `/v1/chat/completions`.
-   - `OMNIROUTE_MODEL`: exact vision-capable model ID configured in OmniRoute.
-   - `OMNIROUTE_API_KEY`: encrypted Worker secret only.
+- `POST /extract-image`: accepts `{ "imageBase64": "...", "mimeType": "image/jpeg" }`, calls Google Cloud Vision and returns recognized text plus conservative structured field candidates.
+- `POST /extract`: accepts `{ "prescriptionText": "..." }` and structures supplied OCR text using the same conservative parser.
 
-5. In GitHub repository Settings → Secrets and variables → Actions → Variables, create:
-   - `RXCHECK_AI_URL`: deployed Worker URL, for example `https://rxcheck-ai-proxy.<your-subdomain>.workers.dev`, without a trailing slash.
+The response includes `extracted.patient`, `extracted.medicines`, raw recognized `text`, and a `source` field. The parser intentionally leaves uncertain fields blank; medicine rows are only candidate matches and may be incomplete, especially for handwriting or complex tables.
 
-6. Rebuild the Android APK after setting the variable. The build workflow injects only the public Worker URL, never the provider key.
+## App configuration
 
-The Worker accepts `POST /extract-image` with a base64 JPEG, PNG or WebP image and sends it as an OpenAI-compatible multimodal `image_url` message. The image is sent only after the app's explicit AI consent. The Worker accepts images up to approximately 12 MB. Use a model/provider that supports this image input format. Protect the Worker with rate limits and an authentication/rate-limiting strategy appropriate to your deployment. CORS is not authentication.
+Set the GitHub Actions variable `RXCHECK_AI_URL` to the deployed Worker URL (without a trailing slash), then rebuild the Android app so it uses the gateway. Never put the Google API key in an Expo public variable.
 
-## AI extraction endpoint
+## Safety and validation
 
-The app sends OCR text to `POST /extract` or the original image to `POST /extract-image` only after user consent. The model returns structured patient demographics and medicine name, strength, dose, unit, frequency, duration, route and instructions. The prompt instructs the model to leave unreadable or absent values blank rather than invent them. Users must verify every extracted value against the original prescription.
+OCR is not a clinical interpretation. Users must compare every patient and medicine field against the original prescription before saving or relying on interaction results. Google Vision may not accurately read handwriting. Test printed and handwritten sample prescriptions and confirm patient demographics and medicine rows before considering prescription autofill complete.
 
-If the gateway URL or Worker secrets are missing, the app falls back to on-device OCR candidates and displays an explicit configuration warning. Image-to-autofill requires a vision-capable OmniRoute model and must be tested with sample prescriptions before being relied on. This is data extraction, not clinical interpretation or validation.
+Protect the Worker with rate limiting and appropriate request controls. CORS is not authentication.
 
 ## Drug-interaction report
 
-The app currently queries the public openFDA Drug Label API for matching product-label excerpts. It does not yet have authorized programmatic integrations for the Drugs.com Interaction Checker, Medscape Drug Interactions Checker, Cyntegrity Drug Interaction Visualizer or FDA FDALabel full-text portal. The consolidated report must identify these sources as unavailable until a supported, authorized connection is implemented; it must never imply that they were checked.
-
-openFDA label excerpts are not a validated pairwise interaction verdict and must not be used alone for medical-care decisions. Cyntegrity visualizations based on FDA adverse-event reports are signals, not proof of causation. A pharmacist or prescriber must review the complete regimen.
+The app currently queries the public openFDA Drug Label API for matching product-label excerpts. It does not have authorized programmatic integrations for Drugs.com, Medscape, Cyntegrity or FDA FDALabel full-text portal. It must not imply that those sources were checked. openFDA label excerpts are not a validated pairwise interaction verdict; a pharmacist or prescriber must review the complete regimen.
