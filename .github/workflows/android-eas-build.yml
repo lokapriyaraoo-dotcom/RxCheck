@@ -6,6 +6,8 @@ on:
     paths:
       - "app/**"
       - "services/**"
+      - "modules/**"
+      - "plugins/**"
       - "backend/**"
       - "package.json"
       - "package-lock.json"
@@ -54,6 +56,15 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Verify local Expo module autolinking
+        run: npx expo-modules-autolinking search | grep -q 'rxcheck-paddle-ocr'
+
+      - name: Run TypeScript checks
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm test
 
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean
