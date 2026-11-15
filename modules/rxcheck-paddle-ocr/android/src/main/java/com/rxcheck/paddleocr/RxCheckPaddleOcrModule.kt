@@ -4,7 +4,7 @@ import android.net.Uri
 import com.paddle.ocr.EngineConfig
 import com.paddle.ocr.PaddleOCR
 import com.paddle.ocr.PaddleOCRConfig
-import com.paddle.ocr.util.OpenCVUtils
+import org.opencv.android.OpenCVLoader
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +32,7 @@ class RxCheckPaddleOcrModule : Module() {
           else -> throw IllegalArgumentException("Only local file and content URIs are supported")
         }
         if (bytes.isEmpty()) throw IllegalArgumentException("Selected image is empty")
-        if (!OpenCVUtils.init(context)) throw IllegalStateException("OpenCV could not be initialized")
+        if (!OpenCVLoader.initDebug()) throw IllegalStateException("OpenCV native library failed to load on this Android device. Try updating RxCheck or use printed OCR/manual entry.")
 
         val ocr = paddleOcr ?: PaddleOCR.create(
           context = context,
