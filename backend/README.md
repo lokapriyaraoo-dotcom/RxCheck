@@ -1,6 +1,6 @@
 # RxCheck AI extraction gateway
 
-The app uses an optional Cloudflare Worker as a secure proxy to an OmniRoute-compatible AI endpoint for structuring OCR text into patient and medicine fields. This is a prescription data-extraction feature only; it is not a diagnosis or clinical interaction engine.
+The app uses a Cloudflare Worker gateway. After explicit consent, it sends the prescription image to a full PaddleOCR-VL layout-parsing service, then sends the structured OCR/layout result to the configured OmniRoute-compatible model to map patient and medicine fields. The text-only `/extract` endpoint remains as a fallback. This is a prescription data-extraction feature only; it is not a diagnosis or clinical interaction engine.
 
 Claude, ChatGPT, Grok and OmniRoute are development/model-provider tools. The app must not expose separate in-app assistant/review buttons for these tools. Do not put provider API keys in the Android app, Expo public variables, or this repository.
 
