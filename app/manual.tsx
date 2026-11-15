@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Brand } from '../components/Brand';
 import { emptyPatient, type Medicine, type Patient } from '../services/types';
 import { extractPatientDetails, extractMedicineCandidates, readPrescriptionImage } from '../services/ocr';
-import { extractPrescriptionWithAI, isAIConfigured } from '../services/ai';
+import { extractPrescriptionWithAI, extractPrescriptionImageWithAI, isAIConfigured } from '../services/ai';
 
 const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')=><View style={{gap:5}}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChange} placeholder={placeholder} style={s.input}/></View>;
 function localMedicines(text:string,prefix='ocr'):Medicine[]{
@@ -16,8 +16,8 @@ function localMedicines(text:string,prefix='ocr'):Medicine[]{
 }
 export default function Manual(){
   const router=useRouter();
-  const params=useLocalSearchParams<{ocrText?:string;aiConsent?:string}>();
-  const initialText=typeof params.ocrText==='string'?params.ocrText:'';
+  const params=useLocalSearchParams<{ocrText?:string;aiConsent?:string;imageUris?:string}>();
+  const initialText=typeof params.ocrText==='string'?params.ocrText:'';\n  const initialImages=(()=>{try{return params.imageUris?JSON.parse(params.imageUris) as string[]:[];}catch{return [];}})();\n  const [imageUris,setImageUris]=useState<string[]>(initialImages);
   const [ocrText,setOcrText]=useState(initialText);
   const [patient,setPatient]=useState<Patient>(()=>({...emptyPatient,...extractPatientDetails(initialText)}));
   const [meds,setMeds]=useState<Medicine[]>(()=>localMedicines(initialText));
@@ -39,14 +39,14 @@ export default function Manual(){
   },[params.ocrText]);
 
   useEffect(()=>{
-    if(!ocrText.trim()||!aiConsent)return;
+    if((!ocrText.trim()&&!imageUris.length)||!aiConsent)return;
     if(!isAIConfigured()){
       setAiReview('The secure AI gateway is not configured in this app build. Patient and medicine fields detected by on-device OCR remain filled; configure the gateway URL and rebuild to enable AI autofill.');
       return;
     }
     let active=true;
     setAiBusy(true);
-    extractPrescriptionWithAI(ocrText).then(data=>{
+    (imageUris.length?Promise.all(imageUris.map(uri=>extractPrescriptionImageWithAI(uri))).then(results=>({patient:results.find(x=>x.patient)?.patient,medicines:results.flatMap(x=>x.medicines||[])})):extractPrescriptionWithAI(ocrText)).then(data=>{
       if(!active)return;
       const p=data.patient||{};
       const patientFound=[p.name,p.age,p.gender,p.weightKg,p.allergies].some(value=>value!==undefined&&String(value).trim()!=='');
@@ -77,7 +77,7 @@ export default function Manual(){
       setAiReview((error instanceof Error?error.message:'AI extraction unavailable')+' On-device OCR fields remain filled where detected; please verify or enter unclear values manually.');
     }).finally(()=>{if(active)setAiBusy(false);});
     return()=>{active=false;};
-  },[ocrText,aiConsent]);
+  },[ocrText,aiConsent,imageUris]);
 
   const p=(key:'name'|'age'|'weightKg'|'gender'|'allergies',value:string)=>setPatient(old=>({...old,[key]:value}));
   function updateMedicine(id:string,key:'name'|'strength'|'dose'|'unit'|'instructions',value:string){
