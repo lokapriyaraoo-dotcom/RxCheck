@@ -72,7 +72,7 @@ No validated drug-interaction database is bundled or connected. `services/intera
 
 - OCR image recognition runs on-device; the image itself is not uploaded by the scanner.
 - If the user explicitly consents to AI autofill, extracted OCR text is sent to the configured RxCheck gateway and provider. Without consent, text remains on-device.
-- Configure `EXPO_PUBLIC_RXCHECK_AI_URL` in the app build environment with the deployed Worker URL. Keep provider API keys only in the Worker secret store; never add them to the app or repository.
+- For the included GitHub Actions Android APK workflow, add a repository Actions variable named `RXCHECK_AI_URL` containing the deployed Worker URL; the workflow maps it to build-time `EXPO_PUBLIC_RXCHECK_AI_URL`. Configure `OMNIROUTE_BASE_URL`, `OMNIROUTE_API_KEY`, and `OMNIROUTE_MODEL` on the Worker. Keep provider API keys only in the Worker secret store; never add them to the app or repository.
 - This starter does not persist patient records or create a cloud history.
 - PDF sharing is user-initiated and may expose health information to the selected app/person.
 - Do not commit real patient prescriptions, personal health data, API keys, signing files, or credentials.
