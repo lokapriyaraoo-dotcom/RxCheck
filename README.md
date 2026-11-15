@@ -8,9 +8,9 @@ React Native / Expo Android app starter with on-device Google ML Kit Text Recogn
 
 - Home-first navigation: scanner, manual verification, and history.
 - Camera capture and multi-image gallery selection (up to five images).
-- Google ML Kit Text Recognition v2 via `expo-mlkit-ocr`, running on-device. Local ML Kit preview images are not sent to an OCR cloud service unless the user separately consents to the PaddleOCR-VL image pipeline.
+- Google ML Kit Text Recognition v2 via `expo-mlkit-ocr`, running on-device. Local ML Kit preview images are not sent to an OCR cloud service unless the user separately consents to managed cloud OCR and AI extraction.
 - On-device OCR extracts identifiable patient fields and medicine candidates, then pre-fills a review form. Every extracted value remains unverified until checked against the original.
-- Optional prescription image parsing through the secure RxCheck gateway, enabled only after explicit consent. The gateway sends the image to the full PaddleOCR-VL layout-parsing service, then sends the parsed structure to the configured OmniRoute model for patient/medicine field extraction. Text-only extraction remains as a fallback.
+- Optional prescription image parsing through the secure RxCheck gateway, enabled only after explicit consent. The gateway sends the image to Google Cloud Vision document text detection, then sends the recognized text to the configured OmniRoute model for patient/medicine field extraction. Text-only extraction remains as a fallback.
 - Conservative interaction-check placeholder that refuses to declare combinations safe without a validated source.
 - Review findings and PDF export.
 - Vitest checks and GitHub Actions CI.
@@ -59,7 +59,7 @@ EAS prints a build URL when finished. The repository does not contain signing cr
 1. Take a photo or select up to five prescription images.
 2. The app calls Google ML Kit Text Recognition v2 locally on the device.
 3. RxCheck extracts identifiable patient details and medicine candidates locally and shows a preview.
-4. The review form is prefilled with those candidates. If the secure AI gateway is configured, the user may separately consent to send OCR text for structured AI extraction; declining keeps processing on-device.
+4. The review form is prefilled with those candidates. If the secure AI gateway is configured, the user may separately consent to send the prescription image to Google Cloud Vision OCR and the recognized text to OmniRoute for structured extraction; declining keeps processing on-device.
 5. The user verifies or corrects patient, medicine, strength and dose fields against the original prescription before continuing. Extracted values remain unverified.
 
 ML Kit performs text recognition only. It does not understand prescriptions, resolve ambiguous handwriting, calculate safe doses, detect interactions, or determine whether a prescription is appropriate. It may misread drug names, decimal points, units, and handwritten text. If any value is unclear, do not guess.
@@ -72,7 +72,7 @@ No validated drug-interaction database is bundled or connected. `services/intera
 
 - OCR image recognition runs on-device; the image itself is not uploaded by the scanner.
 - If the user explicitly consents to AI autofill, extracted OCR text is sent to the configured RxCheck gateway and provider. Without consent, text remains on-device.
-- For the included GitHub Actions Android APK workflow, add a repository Actions variable named `RXCHECK_AI_URL` containing the deployed Worker URL; the workflow maps it to build-time `EXPO_PUBLIC_RXCHECK_AI_URL`. Configure `OMNIROUTE_BASE_URL`, `OMNIROUTE_API_KEY`, `OMNIROUTE_MODEL`, and `PADDLEOCR_VL_URL` on the Worker. Keep provider API keys only in the Worker secret store; never add them to the app or repository. Keep provider API keys only in the Worker secret store; never add them to the app or repository.
+- For the included GitHub Actions Android APK workflow, add a repository Actions variable named `RXCHECK_AI_URL` containing the deployed Worker URL; the workflow maps it to build-time `EXPO_PUBLIC_RXCHECK_AI_URL`. Configure `OMNIROUTE_BASE_URL`, `OMNIROUTE_API_KEY`, `OMNIROUTE_MODEL`, and `GOOGLE_CLOUD_VISION_API_KEY` on the Worker. Keep provider API keys only in the Worker secret store; never add them to the app or repository. Keep provider API keys only in the Worker secret store; never add them to the app or repository.
 - This starter does not persist patient records or create a cloud history.
 - PDF sharing is user-initiated and may expose health information to the selected app/person.
 - Do not commit real patient prescriptions, personal health data, API keys, signing files, or credentials.
@@ -80,7 +80,7 @@ No validated drug-interaction database is bundled or connected. `services/intera
 
 ## Known limitations before production
 
-- PaddleOCR-VL improves document layout and table parsing, but does not guarantee accurate handwriting recognition or clinical interpretation. A separately hosted PaddleOCR-VL service is required.
+- Google Cloud Vision provides managed document text detection without a separately hosted OCR server. It does not guarantee accurate handwriting recognition or clinical interpretation.
 - No automated field extraction or confidence score is presented because the selected ML Kit API does not provide a calibrated clinical confidence score.
 - No validated dose-range, allergy, pregnancy, renal/hepatic, duplicate-therapy, or interaction engine.
 - History is a placeholder; patient data is not saved.
