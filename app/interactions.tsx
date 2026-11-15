@@ -73,7 +73,7 @@ export default function Interactions(){
  return <ScrollView contentContainerStyle={s.page}>
   <Link href="/" style={s.back}>‹ Home</Link><Brand size={38}/>
   <Text style={s.title}>FDA medicine-label lookup</Text>
-  <Text style={s.copy}>This page searches individual FDA product labels by medicine name. It is not a pairwise drug-interaction checker and does not assess dose, strength, timing or patient-specific risks.</Text>
+  <Text style={s.copy}>This page searches individual FDA product labels by medicine name. It is not a pairwise drug-interaction checker and does not assess dose, strength, timing or patient-specific risks. When you use this lookup, medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
   <View style={s.card}><Text style={s.section}>MEDICINES ENTERED</Text>{list.length?list.map((m,i)=><Text key={i} style={s.med}>• {m}</Text>):<Text style={s.copy}>No medicine names were supplied. Return to patient details and add all prescribed and currently used medicines.</Text>}</View>
   <View style={s.report}>
    <Text style={s.reportTitle}>Individual label findings</Text>
