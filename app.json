@@ -51,9 +51,6 @@
       "image": "./assets/brand/rxcheck-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F5FAF8"
-    },
-    "autolinking": {
-      "nativeModulesDir": "modules"
     }
   }
 }
