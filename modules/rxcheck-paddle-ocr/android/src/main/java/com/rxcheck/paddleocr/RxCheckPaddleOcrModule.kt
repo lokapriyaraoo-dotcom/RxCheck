@@ -10,6 +10,8 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.File
 
 class RxCheckPaddleOcrModule : Module() {
+  private var paddleOcr: PaddleOCR? = null
+
   override fun definition() = ModuleDefinition {
     Name("RxCheckPaddleOcr")
 
@@ -26,16 +28,15 @@ class RxCheckPaddleOcrModule : Module() {
       if (bytes.isEmpty()) throw IllegalArgumentException("Selected image is empty")
       if (!OpenCVUtils.init(context)) throw IllegalStateException("OpenCV could not be initialized")
 
-      val ocr = PaddleOCR.create(
+      val ocr = paddleOcr ?: PaddleOCR.create(
         context = context,
         config = PaddleOCRConfig(recScoreThresh = 0.0f, recBatchSize = 1),
         engineConfig = EngineConfig(numThreads = 4),
         detModelAssetPath = "models/det/inference.onnx",
         recModelAssetPath = "models/rec/inference.onnx",
         recConfigAssetPath = "models/rec/inference.yml"
-      )
-      try {
-        val result = ocr.recognize(bytes)
+      ).also { paddleOcr = it }
+      val result = ocr.recognize(bytes)
         val lines = result.results.map { it.text.trim() }.filter { it.isNotEmpty() }
         mapOf(
           "text" to lines.joinToString("\n"),
@@ -44,9 +45,6 @@ class RxCheckPaddleOcrModule : Module() {
           "engine" to "PaddleOCR PP-OCRv5 mobile (experimental, on-device)",
           "warning" to "Handwriting OCR is experimental. Verify every medicine name, strength, dose, decimal, unit and instruction against the original prescription."
         )
-      } finally {
-        ocr.release()
-      }
     }
   }
 }
