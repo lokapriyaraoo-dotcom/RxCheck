@@ -18,7 +18,7 @@ export async function exportSafetyReport(patient: Patient, medicines: Medicine[]
     <p>Generated for human review. This is not a prescription, diagnosis, or clinical clearance.</p>
     <h2>Patient details</h2>
     <p>Name: ${esc(patient.name || 'Not provided')} | Age: ${esc(patient.age || 'Not provided')} | Gender: ${esc(patient.gender || 'Not provided')} | Weight: ${esc(patient.weightKg || 'Not provided')}</p>
-    <p>Allergies: ${esc(patient.allergies || 'Not provided')} | Pregnant: ${patient.pregnant ? 'Yes' : 'No'} | Kidney disease: ${patient.kidneyDisease ? 'Yes' : 'No'} | Liver disease: ${patient.liverDisease ? 'Yes' : 'No'}</p>
+    <p>Allergies: ${esc(patient.allergies || 'Not provided')} | Pregnant: ${patient.pregnant ? 'Yes' : 'Not recorded'} | Kidney disease: ${patient.kidneyDisease ? 'Yes' : 'Not recorded'} | Liver disease: ${patient.liverDisease ? 'Yes' : 'Not recorded'}</p>
     <h2>Medicines (user-entered; not independently verified)</h2>
     <table><tr><th>Name</th><th>Strength</th><th>Dose</th><th>Frequency</th><th>Duration</th><th>Instructions</th><th>Status</th></tr>${rows}</table>
     <h2>Review findings</h2><ul>${alerts}</ul>
