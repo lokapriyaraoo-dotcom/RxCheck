@@ -12,11 +12,19 @@ Add a second, fully on-device OCR path for handwritten and printed prescription 
 ## Selected implementation direction
 Evaluate the official PaddleOCR PP-OCRv5 mobile Android SDK as a separate handwriting-capable engine, while retaining ML Kit for the existing printed-text path. The English recognition model is a candidate, not a guarantee of reliable handwriting recognition. It must be tested on real prescriptions before enabling automatic routing.
 
+## Implementation status (2026-11-15)
+
+- Vendored the official PaddleOCR Android SDK Kotlin source under `modules/rxcheck-paddle-ocr/android/src/main/java/com/paddle/ocr/`.
+- Added an Expo local native module bridge named `RxCheckPaddleOcr` that reads only local `file://` and `content://` image URIs.
+- Added pinned PP-OCRv5 mobile detection and English recognition ONNX model downloads to the Android Gradle build, with SHA-256 verification for both ONNX weight files. The matching YAML recognition dictionary is fetched from the same pinned revision.
+- Added a separate **TRY HANDWRITING OCR (EXPERIMENTAL)** action in the scanner. Printed OCR remains on Google ML Kit.
+- Android release build and real-device behaviour still need to pass; handwriting accuracy on prescription writing is not validated.
+
 ## Required engineering work
-1. Pin an immutable upstream PaddleOCR SDK revision and inspect its licence and transitive dependencies.
+1. Pin an immutable upstream PaddleOCR SDK revision and inspect its licence and transitive dependencies. (Source and Apache-2.0 licence are now vendored; a full dependency/build audit remains.)
 2. Obtain the matching PP-OCRv5 mobile detection and English recognition ONNX models plus the required model configuration. Pin immutable model revisions and verify SHA-256 hashes during build; never download an unpinned model from a moving branch.
-3. Integrate the SDK through an Expo Modules API Android native module compatible with Expo SDK 54, React Native 0.81, Java 17 and the generated Gradle project.
-4. Expose a narrow native API accepting a local image URI/bytes and returning ordered text lines plus engine metadata. Do not add any network upload path.
+3. Integrate the SDK through an Expo Modules API Android native module compatible with Expo SDK 54, React Native 0.81, Java 17 and the generated Gradle project. (Bridge and local module registration are now added; Gradle verification remains.)
+4. Expose a narrow native API accepting a local image URI/bytes and returning ordered text lines plus engine metadata. Do not add any network upload path. (Implemented for local Android URIs.)
 5. Add deterministic error handling for missing models, unsupported images, low-confidence output, cancellation and native runtime failures.
 6. Keep the existing ML Kit path as the printed-text fallback. Do not silently treat PaddleOCR output as verified.
 7. Add tests for native-module availability, result mapping, empty output and parser regression. Build a release APK in CI.
