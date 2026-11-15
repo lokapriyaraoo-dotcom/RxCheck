@@ -1,27 +1,32 @@
 # RxCheck AI extraction gateway
 
-The app uses a Cloudflare Worker gateway. After explicit consent, it sends the prescription image to a full PaddleOCR-VL layout-parsing service, then sends the structured OCR/layout result to the configured OmniRoute-compatible model to map patient and medicine fields. The text-only `/extract` endpoint remains as a fallback. This is a prescription data-extraction feature only; it is not a diagnosis or clinical interaction engine.
+The app uses a Cloudflare Worker gateway. After explicit consent, it sends the prescription image to Google Cloud Vision `DOCUMENT_TEXT_DETECTION`, then sends the recognized text to the configured OmniRoute-compatible model to map patient and medicine fields. This removes the need to host a separate PaddleOCR-VL server. The text-only `/extract` endpoint remains as a fallback. This is prescription data extraction only, not diagnosis or clinical interaction validation.
 
 Claude, ChatGPT, Grok and OmniRoute are development/model-provider tools. The app must not expose separate in-app assistant/review buttons for these tools. Do not put provider API keys in the Android app, Expo public variables, or this repository.
 
 ## Configure the AI gateway
 
 1. Deploy an OmniRoute-compatible endpoint reachable over HTTPS.
-2. In OmniRoute, configure the model/provider you choose for prescription text extraction and create an API key.
-3. From the repository root, deploy the Cloudflare Worker:
+2. In OmniRoute, configure a model for prescription text extraction and create an API key.
+3. Enable the Google Cloud Vision API in Google Cloud Console. Create an API key and restrict it to the Cloud Vision API.
+4. From the repository root, deploy the Cloudflare Worker:
 
 ```sh
 npm install
 npm install -g wrangler
 wrangler login
 wrangler deploy
-wrangler secret put OMNIROUTE_API_KEY\nwrangler secret put PADDLEOCR_VL_API_KEY # only if your Paddle service requires it
+wrangler secret put OMNIROUTE_API_KEY
+wrangler secret put GOOGLE_CLOUD_VISION_API_KEY
 ```
 
-4. Deploy the **full PaddleOCR-VL service** (not only its standalone VLM inference component) on a machine/service that can run PaddleOCR-VL. The official service listens on port 8080 and exposes `POST /layout-parsing`. For a manual CPU-capable deployment, install PaddleOCR with the document-parser extra and run `paddlex --serve --pipeline PaddleOCR-VL`; a GPU deployment using the official Docker Compose setup is recommended for production throughput. The gateway sends `{ file: <base64 image>, fileType: 1, useDocOrientationClassify: true, useDocUnwarping: true, useLayoutDetection: true }` to this endpoint. See the [official PaddleOCR-VL deployment guide](https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html).\n\n5. In Cloudflare Worker settings, configure:
-   - `OMNIROUTE_BASE_URL`: HTTPS base URL for the OmniRoute endpoint, without `/v1/chat/completions`.
-   - `OMNIROUTE_MODEL`: exact model ID configured in OmniRoute.\n   - `PADDLEOCR_VL_URL`: full HTTPS URL to the PaddleOCR-VL service endpoint, including `/layout-parsing`.\n   - `PADDLEOCR_VL_API_KEY`: optional encrypted Worker secret if the PaddleOCR service requires bearer authentication.
+5. In Cloudflare Worker settings, configure:
+   - `OMNIROUTE_BASE_URL`: HTTPS base URL for OmniRoute, without `/v1/chat/completions`.
+   - `OMNIROUTE_MODEL`: exact model ID configured in OmniRoute.
    - `OMNIROUTE_API_KEY`: encrypted Worker secret only.
+   - `GOOGLE_CLOUD_VISION_API_KEY`: encrypted Worker secret only.
+
+The Worker calls Google's `POST https://vision.googleapis.com/v1/images:annotate` endpoint with `DOCUMENT_TEXT_DETECTION`. This is a managed API; no PaddleOCR-VL service or separate OCR server URL is required. See the [official Cloud Vision OCR guide](https://docs.cloud.google.com/vision/docs/ocr) and [document text detection details](https://docs.cloud.google.com/vision/docs/fulltext-annotations).
 
 6. In GitHub repository Settings → Secrets and variables → Actions → Variables, create:
    - `RXCHECK_AI_URL`: deployed Worker URL, for example `https://rxcheck-ai-proxy.<your-subdomain>.workers.dev`, without a trailing slash.
@@ -32,9 +37,9 @@ Protect the Worker with rate limits, request-size limits and an authentication/r
 
 ## AI extraction endpoint
 
-The app sends OCR text to `POST /extract` only after user consent. The model returns structured patient demographics and medicine name, strength, dose, unit, frequency, duration, route and instructions. The prompt instructs the model to leave unreadable or absent values blank rather than invent them. Users must verify every extracted value against the original prescription.
+The app sends the prescription image to `POST /extract-image` only after explicit user consent. Google Cloud Vision recognizes document text; OmniRoute maps that text into patient demographics and medicine name, strength, dose, unit, frequency, duration, route and instructions. The prompt instructs the model to leave unreadable or absent values blank rather than invent them. Users must verify every extracted value against the original prescription.
 
-If the gateway URL, Worker secrets, or PaddleOCR-VL service URL are missing, the app falls back to on-device OCR candidates and displays an explicit configuration warning. The app does not bundle or run PaddleOCR-VL on the Android device; it requires the separately deployed server. Local OCR alone is not reliable enough to interpret prescription tables or handwriting.
+The text-only `POST /extract` endpoint remains available as a fallback. If the gateway URL or Worker secrets are missing, the app falls back to on-device OCR candidates and displays an explicit configuration warning. Cloud OCR and AI results remain unverified and may misread handwriting, medicine names, strengths, units or doses.
 
 ## Drug-interaction report
 
