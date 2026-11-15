@@ -36,10 +36,10 @@ export function extractPatientDetails(text: string): Partial<Patient> {
     }
   }
   const allergies = first([/(?:known\s*)?allergies?\s*:\s*([^\n]+)/i]);
+  const normalizedGender = ({m:'Male', male:'Male', f:'Female', female:'Female', other:'Other'} as Record<string,string>)[gender.toLowerCase()] || gender;
   return {
     ...(name ? {name} : {}), ...(age ? {age} : {}),
     ...(weightKg ? {weightKg} : {}),
-    ...(gender ? {gender: ({m:'Male',male:'Male',f:'Female',female:'Female',other:'Other'} as Record<string,string>)[gender.toLowerCase()] || gender : {}),
     ...(allergies ? {allergies} : {})
   };
 }
@@ -142,3 +142,4 @@ export function mapGatewayErrorMessage(code: string): string {
   };
   return messages[code] ?? 'Text extraction is unavailable. Please enter details manually.';
 }
+
