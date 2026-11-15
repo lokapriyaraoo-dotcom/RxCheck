@@ -7,7 +7,7 @@ RxCheck is an Android prototype that helps organise text from a prescription for
 ## What the current app does
 
 - Capture a prescription photo or select up to five images.
-- Read printed text on-device with Google ML Kit Text Recognition v2 (expo-mlkit-ocr).
+- Read printed text on-device with Google ML Kit Text Recognition v2 (expo-mlkit-ocr). An experimental PaddleOCR PP-OCRv5 mobile native Android path is also included for a separate handwriting attempt; it runs locally with ONNX Runtime and OpenCV.
 - Apply conservative, local pattern matching to identify some patient fields and medicine candidates.
 - Let the user correct or enter patient and medicine details manually, including strength, dose, frequency and duration.
 - Query the public openFDA Drug Label API for individual label excerpts by medicine name. This is NOT a pairwise interaction checker.
@@ -16,7 +16,7 @@ RxCheck is an Android prototype that helps organise text from a prescription for
 
 ## Free OCR and privacy
 
-The current scanner uses on-device ML Kit. NO Google Cloud Vision billing account, API key, OmniRoute account, AI gateway URL or hosted OCR service is required. The scanner code does not upload prescription images for OCR. There is no cloud AI autofill path in the current app.
+The scanner uses on-device Google ML Kit for printed text and an experimental native PaddleOCR/ONNX Runtime path for handwriting attempts. The PaddleOCR model assets are fetched at Android build time from pinned model revisions; they are packaged in the APK and inference runs on-device. NO Google Cloud Vision billing account, API key, OmniRoute account, AI gateway URL or hosted OCR service is required. The scanner code does not upload prescription images or OCR text for OCR. There is no cloud AI autofill path in the current app.
 
 The medicine-label screen sends the medicine names entered by the user to the public openFDA API for label lookup. It does not send the prescription image or patient demographics to openFDA. No validated drug-interaction database is connected.
 
@@ -24,7 +24,7 @@ If an older Cloudflare Worker was deployed for RxCheck, the current app no longe
 
 ## OCR limitations
 
-ML Kit recognises printed text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. Handwriting recognition is NOT integrated in the current app. It may miss or mis-map dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
+ML Kit recognises printed text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. The scanner includes a separate experimental PaddleOCR PP-OCRv5 mobile action for handwritten pages. PaddleOCR models are downloaded from pinned Hugging Face revisions during the Android Gradle build and checksum-verified before packaging. The recognition model is not clinically validated for prescriptions and can miss or misread handwritten text, especially medicine names, strengths and doses. It may also mis-map dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
 
 Every OCR field is an UNVERIFIED CANDIDATE. The user must compare each field with the original prescription before continuing. If any name, strength, dose, decimal, unit or instruction is unclear, do not guess; ask a pharmacist or prescriber.
 
