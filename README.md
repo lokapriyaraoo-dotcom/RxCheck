@@ -80,7 +80,7 @@ No validated drug-interaction database is bundled or connected. `services/intera
 
 ## Known limitations before production
 
-- Google Cloud Vision provides managed document text detection without a separately hosted OCR server. It does not guarantee accurate handwriting recognition or clinical interpretation.
+- The vision-capable OmniRoute model reads prescription images without a separately hosted OCR server. It does not guarantee accurate handwriting recognition or clinical interpretation.
 - No automated field extraction or confidence score is presented because the selected ML Kit API does not provide a calibrated clinical confidence score.
 - No validated dose-range, allergy, pregnancy, renal/hepatic, duplicate-therapy, or interaction engine.
 - History is a placeholder; patient data is not saved.
