@@ -24,7 +24,7 @@ If an older Cloudflare Worker was deployed for RxCheck, the current app no longe
 
 ## OCR limitations
 
-ML Kit recognises printed text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. The scanner includes a separate experimental PaddleOCR PP-OCRv5 mobile action for handwritten pages. PaddleOCR models are downloaded from pinned Hugging Face revisions during the Android Gradle build and checksum-verified before packaging. The recognition model is not clinically validated for prescriptions and can miss or misread handwritten text, especially medicine names, strengths and doses. It may also mis-map dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
+ML Kit recognises printed text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. The scanner includes a separate experimental PaddleOCR PP-OCRv5 mobile action for handwritten pages. PaddleOCR ONNX model weights are downloaded from pinned Hugging Face revisions during the Android Gradle build and SHA-256-verified before packaging; the matching recognition dictionary is fetched from the same pinned revision. The recognition model is not clinically validated for prescriptions and can miss or misread handwritten text, especially medicine names, strengths and doses. It may also mis-map dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
 
 Every OCR field is an UNVERIFIED CANDIDATE. The user must compare each field with the original prescription before continuing. If any name, strength, dose, decimal, unit or instruction is unclear, do not guess; ask a pharmacist or prescriber.
 
