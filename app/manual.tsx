@@ -129,7 +129,7 @@ export default function Manual(){
   }
   function next(){
     const prescribed=meds.map(m=>m.name.trim()).filter(Boolean);
-    const taking=currentMedsText.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
+    const taking=currentMedsText.split(/[\r\n,;]+/).map(x=>x.trim()).filter(Boolean);
     const all=[...new Set([...prescribed,...taking])];
     if(!all.length){Alert.alert('Add medicines','Enter prescribed medicines and any other medicines currently being taken.');return;}
     router.push({pathname:'/interactions',params:{meds:JSON.stringify(all),prescribed:JSON.stringify(prescribed),taking:JSON.stringify(taking)}});
