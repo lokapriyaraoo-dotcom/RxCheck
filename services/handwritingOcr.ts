@@ -13,7 +13,7 @@ type NativeHandwritingOcr = {
 };
 
 export async function readHandwrittenPrescriptionImage(uri: string): Promise<HandwritingOcrResult> {
-  if (!uri || !/^(file|content):\\/\\//i.test(uri)) {
+  if (!uri || !/^(file|content):\/\//i.test(uri)) {
     throw new Error('The selected image URI is invalid. Please choose it again.');
   }
   let native: NativeHandwritingOcr;
