@@ -15,18 +15,18 @@ npm install
 npm install -g wrangler
 wrangler login
 wrangler deploy
-wrangler secret put OMNIROUTE_API_KEY
+wrangler secret put OMNIROUTE_API_KEY\nwrangler secret put PADDLEOCR_VL_API_KEY # only if your Paddle service requires it
 ```
 
-4. In Cloudflare Worker settings, configure:
+4. Deploy the **full PaddleOCR-VL service** (not only its standalone VLM inference component) on a machine/service that can run PaddleOCR-VL. The official service listens on port 8080 and exposes `POST /layout-parsing`. For a manual CPU-capable deployment, install PaddleOCR with the document-parser extra and run `paddlex --serve --pipeline PaddleOCR-VL`; a GPU deployment using the official Docker Compose setup is recommended for production throughput. The gateway sends `{ file: <base64 image>, fileType: 1, useDocOrientationClassify: true, useDocUnwarping: true, useLayoutDetection: true }` to this endpoint. See the [official PaddleOCR-VL deployment guide](https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html).\n\n5. In Cloudflare Worker settings, configure:
    - `OMNIROUTE_BASE_URL`: HTTPS base URL for the OmniRoute endpoint, without `/v1/chat/completions`.
-   - `OMNIROUTE_MODEL`: exact model ID configured in OmniRoute.
+   - `OMNIROUTE_MODEL`: exact model ID configured in OmniRoute.\n   - `PADDLEOCR_VL_URL`: full HTTPS URL to the PaddleOCR-VL service endpoint, including `/layout-parsing`.\n   - `PADDLEOCR_VL_API_KEY`: optional encrypted Worker secret if the PaddleOCR service requires bearer authentication.
    - `OMNIROUTE_API_KEY`: encrypted Worker secret only.
 
-5. In GitHub repository Settings → Secrets and variables → Actions → Variables, create:
+6. In GitHub repository Settings → Secrets and variables → Actions → Variables, create:
    - `RXCHECK_AI_URL`: deployed Worker URL, for example `https://rxcheck-ai-proxy.<your-subdomain>.workers.dev`, without a trailing slash.
 
-6. Rebuild the Android APK after setting the variable. The build workflow injects only the public Worker URL, never the provider key.
+7. Rebuild the Android APK after setting the variable. The build workflow injects only the public Worker URL, never the provider key.
 
 Protect the Worker with rate limits, request-size limits and an authentication/rate-limiting strategy appropriate to your deployment. CORS is not authentication. Do not send real patient prescription data to a provider unless its data handling is appropriate and the patient has been informed.
 
@@ -34,7 +34,7 @@ Protect the Worker with rate limits, request-size limits and an authentication/r
 
 The app sends OCR text to `POST /extract` only after user consent. The model returns structured patient demographics and medicine name, strength, dose, unit, frequency, duration, route and instructions. The prompt instructs the model to leave unreadable or absent values blank rather than invent them. Users must verify every extracted value against the original prescription.
 
-If the gateway URL or Worker secrets are missing, the app falls back to on-device OCR candidates and displays an explicit configuration warning. Local OCR alone is not reliable enough to interpret prescription tables or handwriting.
+If the gateway URL, Worker secrets, or PaddleOCR-VL service URL are missing, the app falls back to on-device OCR candidates and displays an explicit configuration warning. The app does not bundle or run PaddleOCR-VL on the Android device; it requires the separately deployed server. Local OCR alone is not reliable enough to interpret prescription tables or handwriting.
 
 ## Drug-interaction report
 
