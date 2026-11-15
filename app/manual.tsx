@@ -53,9 +53,9 @@ export default function Manual(){
       if(patientFound)setPatient(old=>({
         ...old,
         name:String(p.name||old.name||''),
-        age:String(p.age??old.age??''),
+        age:p.age!==undefined&&String(p.age).trim()!==''?String(p.age):old.age,
         gender:String(p.gender||old.gender||''),
-        weightKg:String(p.weightKg??old.weightKg??''),
+        weightKg:p.weightKg!==undefined&&String(p.weightKg).trim()!==''?String(p.weightKg):old.weightKg,
         allergies:String(p.allergies||old.allergies||'')
       }));
       const parsed=(data.medicines||[]).filter(m=>m.name?.trim()).map((m,i)=>({
@@ -65,7 +65,10 @@ export default function Manual(){
         instructions:[m.route?'Route: '+m.route:'',m.instructions||''].filter(Boolean).join(' · '),
         confidence:m.confidence,needsReview:true
       }));
-      if(parsed.length)setMeds(parsed);
+      if(parsed.length)setMeds(old=>parsed.map(m=>{
+        const local=old.find(candidate=>candidate.name.trim().toLowerCase()===m.name.trim().toLowerCase());
+        return {...m,strength:m.strength||local?.strength||'',dose:m.dose||local?.dose||'',instructions:m.instructions||local?.instructions||''};
+      }));
       setAiReview(patientFound||parsed.length
         ?'AI extraction complete. The detected fields are filled below. Check every value against the original prescription.'
         :'AI could not identify patient or medicine fields reliably. The on-device OCR results remain available for correction.');
