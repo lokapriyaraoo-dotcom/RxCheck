@@ -116,7 +116,7 @@ export async function readPrescriptionImage(uri: string): Promise<OcrResult> {
     const structuredLines = (result.blocks || []).flatMap(block => block.lines || [])
       .map(line => ({text: String(line.text || '').trim(), y: Number(line.boundingBox?.y ?? 0), x: Number(line.boundingBox?.x ?? 0)}))
       .filter(line => line.text)
-      .sort((a,b) => Math.abs(a.y-b.y) > 8 ? a.y-b.y : a.x-b.x)
+      .sort((a,b) => a.y-b.y || a.x-b.x)
       .map(line => line.text);
     const text = (structuredLines.length ? structuredLines.join('\n') : result.text || '').trim();
     if (!text) throw new Error('No readable text was detected. Try a sharper, brighter, straight-on image.');
