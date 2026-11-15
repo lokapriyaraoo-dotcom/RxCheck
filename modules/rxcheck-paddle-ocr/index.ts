@@ -1,1 +1,1 @@
-export { readHandwrittenPrescriptionImage } from '../../services/handwritingOcr';
+export {};
