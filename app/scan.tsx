@@ -4,7 +4,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
 import { readPrescriptionImage, validateImageBytes, extractPatientDetails, extractMedicineCandidates } from '../services/ocr';
-import { isAIConfigured } from '../services/ai';
 
 export default function Scan() {
   const router=useRouter();
@@ -57,22 +56,8 @@ export default function Scan() {
     await recognize(selected);
   }
 
-  function openReview(aiConsent:boolean) {
-    router.push({pathname:'/manual',params:{ocrText:recognizedText,aiConsent:aiConsent?'true':'false',imageUris:JSON.stringify(images)}});
-  }
-  function requestAIConsent() {
-    if(!isAIConfigured()) {
-      Alert.alert('AI gateway not configured','The prescription has already been read on this device. Patient and medicine fields detected locally will still be filled. AI autofill is unavailable until the secure RxCheck gateway URL is configured in this app build.');
-      return;
-    }
-    Alert.alert(
-      'Allow AI prescription autofill?',
-      'The prescription image will be sent to the RxCheck secure gateway, processed by PaddleOCR-VL for layout and text, then structured by the configured AI provider. Continue only if you consent.',
-      [
-        {text:'CANCEL',style:'cancel'},
-        {text:'ALLOW & CONTINUE',onPress:()=>openReview(true)}
-      ]
-    );
+  function openReview() {
+    router.push({pathname:'/manual',params:{ocrText:recognizedText}});
   }
 
   return <ScrollView contentContainerStyle={s.page}>
@@ -95,11 +80,11 @@ export default function Scan() {
           <View style={s.previewItem}><Text style={s.fieldLabel}>GENDER</Text><Text style={s.fieldValue}>{patient.gender||'Not detected'}</Text></View>
         </View>
         <Text style={s.fieldLabel}>MEDICINES & DOSES DETECTED</Text>
-        {medicines.length?medicines.map((medicine,i)=><Text key={i} style={s.medicineLine}>{i+1}. {medicine.name||'Medicine'}{medicine.strength?' · '+medicine.strength:''}{medicine.dose?' · Dose: '+medicine.dose:''}</Text>):<Text style={s.copy}>No medicine rows could be mapped by on-device extraction. AI may be able to structure the text if the secure gateway is configured.</Text>}
+        {medicines.length?medicines.map((medicine,i)=><Text key={i} style={s.medicineLine}>{i+1}. {medicine.name||'Medicine'}{medicine.strength?' · '+medicine.strength:''}{medicine.dose?' · Dose: '+medicine.dose:''}</Text>):<Text style={s.copy}>No medicine rows could be mapped by on-device extraction. Enter medicine details manually and verify them against the original prescription.</Text>}
         <Text style={s.resultNote}>Detected {patientFieldCount} patient fields and {medicines.length} medicine candidates. OCR values are unverified.</Text>
       </View>
-      {isAIConfigured()?<Pressable style={s.primary} onPress={requestAIConsent}><Text style={s.primaryText}>ALLOW AI AUTOFILL →</Text></Pressable>:<View style={s.notice}><Text style={s.noticeTitle}>AI gateway unavailable</Text><Text style={s.noticeText}>On-device OCR autofill is available. To use the AI provider, configure EXPO_PUBLIC_RXCHECK_AI_URL and rebuild this app.</Text></View>}
-      <Pressable style={s.secondary} onPress={()=>openReview(false)}><Text style={s.secondaryText}>NOT NOW — CONTINUE WITH DETECTED FIELDS</Text></Pressable>
+      <View style={s.notice}><Text style={s.noticeTitle}>On-device OCR limitation</Text><Text style={s.noticeText}>RxCheck reads prescription images on this device; it does not upload the image for OCR. Complex layouts or handwriting may not be mapped into fields. Enter missing details manually and verify every value against the original.</Text></View>
+      <Pressable style={s.secondary} onPress={openReview}><Text style={s.secondaryText}>CONTINUE TO REVIEW</Text></Pressable>
     </>:<View style={s.notice}><Text style={s.noticeTitle}>Important</Text><Text style={s.noticeText}>OCR may misread handwriting, medicine names, decimal points or units. If text is unclear, do not guess; ask a pharmacist or prescriber.</Text></View>}
   </ScrollView>;
 }

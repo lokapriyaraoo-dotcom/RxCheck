@@ -1,5 +1,0 @@
-name = "rxcheck-ai-proxy"
-main = "backend/worker.ts"
-compatibility_date = "2026-11-14"
-
-# Set GOOGLE_CLOUD_VISION_API_KEY as an encrypted Worker Secret in Cloudflare.

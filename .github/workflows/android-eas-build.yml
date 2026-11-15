@@ -55,10 +55,6 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Configure optional RxCheck AI endpoint
-        if: ${{ vars.RXCHECK_AI_URL != '' }}
-        run: echo "EXPO_PUBLIC_RXCHECK_AI_URL=${{ vars.RXCHECK_AI_URL }}" > .env
-
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean
 

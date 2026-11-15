@@ -1,95 +1,64 @@
-# Rx/Check — Prescription Review Assistant
+# RxCheck — Prescription review assistant
 
-React Native / Expo Android app starter with on-device Google ML Kit Text Recognition v2. It helps capture prescription images, read printed text, and organise details for human verification.
+RxCheck is an Android prototype that helps organise text from a prescription for HUMAN VERIFICATION. It is not a medical device or a validated clinical decision-support system.
 
-> **Clinical safety:** This is a prototype, not a medical device or validated clinical decision-support system. It must not diagnose, prescribe, change doses, stop medicines, or suggest substitutions. OCR is fallible and is not a clinical interpretation. A missing interaction warning does not mean medicines are safe together. Always consult a qualified pharmacist or prescriber.
+> CLINICAL SAFETY: RxCheck does not diagnose, prescribe, calculate safe doses, confirm that a medicine combination is safe, recommend substitutions, or tell a user to start/stop/change treatment. OCR can misread medicine names, decimal points, units and handwriting. A missing warning is not evidence of safety. Always verify the original prescription and consult a qualified pharmacist or prescriber.
 
-## Current features
+## What the current app does
 
-- Home-first navigation: scanner, manual verification, and history.
-- Camera capture and multi-image gallery selection (up to five images).
-- Google ML Kit Text Recognition v2 via `expo-mlkit-ocr`, running on-device. Local ML Kit preview images are not sent to an OCR cloud service unless the user separately consents to managed cloud OCR and AI extraction.
-- On-device OCR extracts identifiable patient fields and medicine candidates, then pre-fills a review form. Every extracted value remains unverified until checked against the original.
-- Optional prescription image parsing through the secure RxCheck gateway, enabled only after explicit consent. The gateway sends the image directly to a vision-capable model configured through OmniRoute for patient/medicine field extraction. No separate OCR hosting URL is required. Text-only extraction remains as a fallback.
-- Conservative interaction-check placeholder that refuses to declare combinations safe without a validated source.
-- Review findings and PDF export.
-- Vitest checks and GitHub Actions CI.
-- EAS development and preview APK profiles.
+- Capture a prescription photo or select up to five images.
+- Read printed text on-device with Google ML Kit Text Recognition v2 (expo-mlkit-ocr).
+- Apply conservative, local pattern matching to identify some patient fields and medicine candidates.
+- Let the user correct or enter patient and medicine details manually, including strength, dose, frequency and duration.
+- Query the public openFDA Drug Label API for individual label excerpts by medicine name. This is NOT a pairwise interaction checker.
+- Provide external medicine-name search links for prescribed medicines only. RxCheck does not confirm availability, price or suitability.
+- Show that prescription history is not saved. Do not enter real patient data into a prototype unless an appropriate privacy/security review has been completed.
 
-## Requirements
+## Free OCR and privacy
 
-- **Node.js 22 (LTS)** and npm. The project declares Node.js 22 or newer as its supported runtime.
-- **Android phone or tablet** for end-to-end camera capture and on-device ML Kit OCR testing. An emulator can be used for UI checks, but a physical device is recommended for camera/OCR validation.
-- **Expo account with EAS access** for cloud builds. Install the EAS CLI and sign in before starting a cloud build; local app development and CI checks do not require an EAS account.
-- **Expo SDK 54 / React Native 0.81** are pinned by the project dependencies; do not independently upgrade one without checking Expo SDK compatibility.
+The current scanner uses on-device ML Kit. NO Google Cloud Vision billing account, API key, OmniRoute account, AI gateway URL or hosted OCR service is required. The scanner code does not upload prescription images for OCR. There is no cloud AI autofill path in the current app.
 
-## Install and run
+The medicine-label screen sends the medicine names entered by the user to the public openFDA API for label lookup. It does not send the prescription image or patient demographics to openFDA. No validated drug-interaction database is connected.
 
-```bash
-npm install
-npm run typecheck
-npm test
-npx expo-doctor
-```
+If an older Cloudflare Worker was deployed for RxCheck, the current app no longer uses it. Removing the legacy worker files from this repository does not delete a Worker that is already deployed in Cloudflare; delete that old Worker and remove its Google API key secret in Cloudflare/Google Cloud separately.
 
-The ML Kit native module does **not** run in Expo Go. Build a custom development APK:
+## OCR limitations
 
-```bash
-npm install -g eas-cli
-eas login
-eas build --profile development --platform android
-```
+ML Kit recognises text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. It may miss or mis-map handwriting, dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
 
-Install the generated development APK on your Android phone. Keep the phone and development computer on the same network, then start Metro:
+Every OCR field is an UNVERIFIED CANDIDATE. The user must compare each field with the original prescription before continuing. If any name, strength, dose, decimal, unit or instruction is unclear, do not guess; ask a pharmacist or prescriber.
 
-```bash
-npx expo start --dev-client
-```
+## Interaction and label lookup limitations
 
-For a shareable preview APK:
+The app queries individual openFDA product labels for up to eight medicine names. The lookup may return no match or be unavailable/rate-limited. A matching label excerpt is not a pairwise interaction result and does not establish safety. Remaining names beyond the eight-item lookup limit are not queried and are labelled as such in the UI.
 
-```bash
-eas build --profile preview --platform android
-```
+No automated integration is configured for Drugs.com, Medscape, FDA FDALabel full-text search or Cyntegrity. The app must not imply that those sources have been queried. No validated dose-range, allergy, pregnancy, kidney/liver, duplicate-therapy or interaction engine is included.
 
-EAS prints a build URL when finished. The repository does not contain signing credentials. Builds require your EAS login and may use your EAS build quota.
+## Build requirements
 
-## How OCR works
+- Node.js 22 or newer.
+- Android phone or tablet for camera and on-device OCR end-to-end testing.
+- The ML Kit native module does not run in Expo Go. Use the standalone APK built by GitHub Actions or build a custom native APK.
 
-1. Take a photo or select up to five prescription images.
-2. The app calls Google ML Kit Text Recognition v2 locally on the device.
-3. RxCheck extracts identifiable patient details and medicine candidates locally and shows a preview.
-4. The review form is prefilled with those candidates. If the secure AI gateway is configured, the user may separately consent to send the prescription image to the vision-capable model configured through OmniRoute for structured extraction; declining keeps processing on-device.
-5. The user verifies or corrects patient, medicine, strength and dose fields against the original prescription before continuing. Extracted values remain unverified.
+Install and run checks:
 
-ML Kit performs text recognition only. It does not understand prescriptions, resolve ambiguous handwriting, calculate safe doses, detect interactions, or determine whether a prescription is appropriate. It may misread drug names, decimal points, units, and handwritten text. If any value is unclear, do not guess.
+    npm install
+    npm run typecheck
+    npm test
+    npx expo-doctor
 
-## Drug-interaction and clinical rules status
+The GitHub Actions workflow builds a standalone release APK on pushes to main that affect app, services, tests/dependencies/configuration, and uploads it as the RxCheck-Standalone-Android-APK artifact for 14 days. The workflow does not require a cloud OCR secret or endpoint.
 
-No validated drug-interaction database is bundled or connected. `services/interactions.ts` deliberately returns an unknown/incomplete status rather than a false “safe” result. Do not use the app to make treatment decisions. A production integration requires a legally usable, maintained clinical data source, documented coverage and provenance, clinical governance, testing against known cases, and review by qualified pharmacists/clinicians. No automatic medicine alternatives are offered.
+## Privacy and production readiness
 
-## Privacy and security
+- Prescription images and OCR text are handled locally by the scan flow.
+- Medicine names are sent to openFDA only when the user opens the label lookup screen.
+- No patient/prescription history is stored by the current prototype.
+- PDF export utility code is not currently exposed as a user-facing screen.
+- Before production use, add a threat model, validated data sources, encryption and access controls for any future storage, retention/deletion controls, clinical governance, usability validation, and applicable Indian privacy/regulatory review.
 
-- OCR image recognition runs on-device; the image itself is not uploaded by the scanner.
-- If the user explicitly consents to AI autofill, extracted OCR text is sent to the configured RxCheck gateway and provider. Without consent, text remains on-device.
-- For the included GitHub Actions Android APK workflow, add a repository Actions variable named `RXCHECK_AI_URL` containing the deployed Worker URL; the workflow maps it to build-time `EXPO_PUBLIC_RXCHECK_AI_URL`. Configure `OMNIROUTE_BASE_URL`, `OMNIROUTE_API_KEY`, `OMNIROUTE_MODEL`, and `GOOGLE_CLOUD_VISION_API_KEY` on the Worker. Keep provider API keys only in the Worker secret store; never add them to the app or repository. Keep provider API keys only in the Worker secret store; never add them to the app or repository.
-- This starter does not persist patient records or create a cloud history.
-- PDF sharing is user-initiated and may expose health information to the selected app/person.
-- Do not commit real patient prescriptions, personal health data, API keys, signing files, or credentials.
-- Before adding storage or a backend, implement consent, encryption, access controls, retention/deletion, threat modelling, and applicable Indian privacy/regulatory review.
+## Project checks
 
-## Known limitations before production
-
-- The vision-capable OmniRoute model reads prescription images without a separately hosted OCR server. It does not guarantee accurate handwriting recognition or clinical interpretation.
-- No automated field extraction or confidence score is presented because the selected ML Kit API does not provide a calibrated clinical confidence score.
-- No validated dose-range, allergy, pregnancy, renal/hepatic, duplicate-therapy, or interaction engine.
-- History is a placeholder; patient data is not saved.
-- No clinical validation, regulatory clearance, or production security audit has been completed.
-
-## Build and test
-
-```bash
-npm test
-npm run typecheck
-eas build --profile preview --platform android
-```
+    npm run typecheck
+    npm test
+    npx expo-doctor

@@ -3,7 +3,7 @@
     "name": "RxCheck",
     "slug": "rx-check",
     "scheme": "rxcheck",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -13,7 +13,8 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Rx/Check to photograph a prescription for on-device text recognition."
+          "cameraPermission": "Allow Rx/Check to photograph a prescription for on-device text recognition.",
+          "recordAudioAndroid": false
         }
       ],
       [
@@ -31,7 +32,7 @@
     ],
     "android": {
       "package": "com.rxcheck.app",
-      "versionCode": 4,
+      "versionCode": 5,
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES"

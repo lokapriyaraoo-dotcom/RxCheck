@@ -20,8 +20,9 @@ export function extractPatientDetails(text: string): Partial<Patient> {
     /patient\s*:\s*([A-Za-z][A-Za-z .'-]{1,70})/i
   ]);
   const ageSex = first([/age\s*\/\s*sex\s*:\s*([^\n]+)/i, /age\s+and\s+sex\s*:\s*([^\n]+)/i]);
-  const age = first([/(?:patient\s*)?age\s*:\s*(\d{1,3})\s*(?:years?|yrs?|y)?\b/i]) || ageSex.match(/\b(\d{1,3})\s*(?:years?|yrs?|y)\b/i)?.[1] || '';
-  const gender = first([/(?:sex|gender)\s*:\s*(male|female|other)\b/i]) || ageSex.match(/\b(male|female|other)\b/i)?.[1] || '';
+  const compactAgeSex = ageSex.match(/^\s*(\d{1,3})\s*(?:(?:years?|yrs?|y)\s*)?(?:\/|,|-|\s)\s*(male|female|other|m|f)\b/i);
+  const age = first([/(?:patient\s*)?age\s*:\s*(\d{1,3})\s*(?:years?|yrs?|y)?\b/i]) || ageSex.match(/\b(\d{1,3})\s*(?:years?|yrs?|y)\b/i)?.[1] || compactAgeSex?.[1] || '';
+  const gender = first([/(?:sex|gender)\s*:\s*(male|female|other|m|f)\b/i]) || ageSex.match(/\b(male|female|other|m|f)\b/i)?.[1] || compactAgeSex?.[2] || '';
   let weightKg = first([/(?:body\s*)?weight\s*:?\s*(?:\n\s*)?:?\s*(\d{1,3}(?:\.\d+)?)\s*(?:kg|kgs)\b/i]);
   if (!weightKg) {
     const wi = lines.findIndex(x => /^(?:body\s*)?weight\s*:?\s*$/i.test(x));
@@ -38,7 +39,7 @@ export function extractPatientDetails(text: string): Partial<Patient> {
   return {
     ...(name ? {name} : {}), ...(age ? {age} : {}),
     ...(weightKg ? {weightKg} : {}),
-    ...(gender ? {gender: gender[0].toUpperCase()+gender.slice(1).toLowerCase()} : {}),
+    ...(gender ? {gender: ({m:'Male',male:'Male',f:'Female',female:'Female',other:'Other'} as Record<string,string>)[gender.toLowerCase()] || gender : {}),
     ...(allergies ? {allergies} : {})
   };
 }

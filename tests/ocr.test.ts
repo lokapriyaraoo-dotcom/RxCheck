@@ -32,6 +32,12 @@ describe('prescription field extraction', () => {
     expect(result).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
   });
 
+  it('extracts abbreviated age and sex values from common prescription formats', () => {
+    expect(extractPatientDetails('Age / Sex: 34 / M')).toMatchObject({age:'34',gender:'Male'});
+    expect(extractPatientDetails('Age/Sex: 29Y/F')).toMatchObject({age:'29',gender:'Female'});
+    expect(extractPatientDetails('Sex: F')).toMatchObject({gender:'Female'});
+  });
+
   it('extracts weight when OCR reads the weight label before name and age', () => {
     const text = ['Weight','Patient Name : Rahul Sharma','Age / Sex : 25 years / Male',': 60 kg','Presenting Complaints: Fever'].join('\n');
     expect(extractPatientDetails(text)).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
@@ -49,6 +55,16 @@ describe('prescription field extraction', () => {
     expect(meds).toHaveLength(4);
     expect(meds[0]).toMatchObject({name:'Paracetamol',strength:'500 mg',dose:'500 mg',frequency:'Every 2 hours',instructions:'Route: Oral'});
     expect(meds[2]).toMatchObject({name:'Primaquine',strength:'7.5 mg',dose:'15 mg'});
+  });
+
+  it('retains frequency and duration from medicine table columns', () => {
+    const meds = extractMedicineCandidates([
+      'Drug Name','Metformin',
+      'Strength','500 mg',
+      'Frequency','Twice daily',
+      'Duration','5 days'
+    ].join('\n'));
+    expect(meds[0]).toMatchObject({name:'Metformin',strength:'500 mg',frequency:'Twice daily',duration:'5 days'});
   });
 
   it('extracts patient and medicine fields from a multi-line hospital prescription OCR sample', () => {
