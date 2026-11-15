@@ -79,6 +79,7 @@ export default function Interactions(){
    <Text style={s.reportTitle}>Individual label findings</Text>
    {loading?<View style={s.row}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Looking up official FDA product-label records…</Text></View>:null}
    {!loading&&!list.length?<Text style={s.copy}>No lookup was made because no medicine names were entered.</Text>:null}
+   {!loading&&list.length>0?<Text style={s.copy}>Consolidated findings: {matched.length} matching individual label record(s); {notFoundCount} name(s) with no matching FDA label record (unknown result); {unavailableCount} unavailable lookup(s); {Math.max(0,list.length-8)} name(s) not queried because of the 8-name limit. These counts do not establish that a medicine combination is safe.</Text>:null}
    {!loading&&notFoundCount>0?<Text style={s.copy}>{notFoundCount} medicine name(s) had no matching FDA label record. This is an unknown result, not evidence that the medicine or combination is safe.</Text>:null}
    {!loading&&unavailableCount>0?<Text style={s.copy}>FDA lookup could not be completed for {unavailableCount} medicine name(s), for example because the service was unavailable or rate-limited. Those names were not checked; retry later.</Text>:null}
    {!loading&&matched.map((item,i)=><View key={i} style={s.finding}>
@@ -91,12 +92,12 @@ export default function Interactions(){
   <View style={s.coverage}>
    <Text style={s.section}>SOURCE COVERAGE</Text>
    {list.length>8?<Text style={s.copy}>Only the first 8 of {list.length} entered medicine names were queried. The remaining {list.length-8} names were not looked up.</Text>:null}
-   <Text style={s.copy}>• openFDA Drug Label API: queried live for up to 8 medicine names.</Text>
+   <Text style={s.copy}>• openFDA Drug Label API: queried live for up to 8 medicine names. Its data must not be relied on for medical-care decisions and are not a validated pairwise interaction check.</Text>
    <Text style={s.copy}>• FDA FDALabel: full-text labeling reference; no automated integration configured.</Text>
    <Text style={s.copy}>• Drugs.com and Medscape: no licensed checker API credentials/integration configured.</Text>
-   <Text style={s.copy}>• Cyntegrity: no integration configured; its visualizer is not a validated causal interaction checker.</Text>
+   <Text style={s.copy}>• Cyntegrity: no integration configured. Its visualizer is based on patterns in FDA adverse-event reports; those reports do not establish causation and are not a validated causal interaction checker.</Text>
   </View>
-  <View style={s.warning}><Text style={s.warningTitle}>Clinical safety limitation</Text><Text style={s.copy}>RxCheck does not confirm that a medicine combination is safe and does not replace a pharmacist or prescriber. openFDA label excerpts are not a validated pairwise interaction check. A label lookup failure or a missing warning does not mean there is no risk. Do not stop, change or substitute medicines based on this page.</Text></View>
+  <View style={s.warning}><Text style={s.warningTitle}>Clinical safety limitation</Text><Text style={s.copy}>This report does not claim that a medicine combination is safe. A no-match result is unknown, not evidence that the medicines are safe together. openFDA says its data must not be relied on for medical-care decisions. Drugs.com, Medscape, Cyntegrity and FDA FDALabel cannot be represented as checked because no supported, authorised connection is configured. Ask a pharmacist or prescriber to verify the complete regimen. Do not stop, change or substitute medicines based on this report.</Text></View>
   {prescribed.length>0
     ?<Pressable style={s.next} onPress={()=>router.push({pathname:'/buy',params:{meds:JSON.stringify(prescribed)}})}><Text style={s.nextText}>Search prescribed medicines →</Text></Pressable>
     :<Text style={s.copy}>Medicine-store searches are available only for medicines entered under “Prescribed medicines.” Currently taken medicines are not sent to store search.</Text>}
