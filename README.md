@@ -24,9 +24,13 @@ If an older Cloudflare Worker was deployed for RxCheck, the current app no longe
 
 ## OCR limitations
 
-ML Kit recognises text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. It may miss or mis-map handwriting, dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
+ML Kit recognises printed text; the local parser only recognises common labelled demographics and simple row/column medicine layouts. Handwriting recognition is NOT integrated in the current app. It may miss or mis-map dense tables, abbreviations, brand names, or unusual prescription formats. It does not understand clinical context.
 
 Every OCR field is an UNVERIFIED CANDIDATE. The user must compare each field with the original prescription before continuing. If any name, strength, dose, decimal, unit or instruction is unclear, do not guess; ask a pharmacist or prescriber.
+
+## Handwriting recognition roadmap
+
+The selected next step is an offline Android-native handwriting OCR engine alongside the existing ML Kit printed-text path. PaddleOCR PP-OCRv5 mobile is the candidate because its English recognition model is small and reports improved handwritten-English recognition. This is not yet integrated or validated in RxCheck. A safe implementation requires the official Android SDK, both detection and recognition model assets, pinned model revisions and SHA-256 checks, an Expo native-module bridge, Android release-build compatibility checks, and testing against representative handwritten prescriptions. The UI must not label handwriting as supported until those checks pass. Even after integration, all extracted fields remain unverified and require human confirmation.
 
 ## Interaction and label lookup limitations
 
