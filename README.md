@@ -10,7 +10,7 @@ React Native / Expo Android app starter with on-device Google ML Kit Text Recogn
 - Camera capture and multi-image gallery selection (up to five images).
 - Google ML Kit Text Recognition v2 via `expo-mlkit-ocr`, running on-device. Local ML Kit preview images are not sent to an OCR cloud service unless the user separately consents to managed cloud OCR and AI extraction.
 - On-device OCR extracts identifiable patient fields and medicine candidates, then pre-fills a review form. Every extracted value remains unverified until checked against the original.
-- Optional prescription image parsing through the secure RxCheck gateway, enabled only after explicit consent. The gateway sends the image to Google Cloud Vision document text detection, then sends the recognized text to the configured OmniRoute model for patient/medicine field extraction. Text-only extraction remains as a fallback.
+- Optional prescription image parsing through the secure RxCheck gateway, enabled only after explicit consent. The gateway sends the image directly to a vision-capable model configured through OmniRoute for patient/medicine field extraction. No separate OCR hosting URL is required. Text-only extraction remains as a fallback.
 - Conservative interaction-check placeholder that refuses to declare combinations safe without a validated source.
 - Review findings and PDF export.
 - Vitest checks and GitHub Actions CI.
@@ -59,7 +59,7 @@ EAS prints a build URL when finished. The repository does not contain signing cr
 1. Take a photo or select up to five prescription images.
 2. The app calls Google ML Kit Text Recognition v2 locally on the device.
 3. RxCheck extracts identifiable patient details and medicine candidates locally and shows a preview.
-4. The review form is prefilled with those candidates. If the secure AI gateway is configured, the user may separately consent to send the prescription image to Google Cloud Vision OCR and the recognized text to OmniRoute for structured extraction; declining keeps processing on-device.
+4. The review form is prefilled with those candidates. If the secure AI gateway is configured, the user may separately consent to send the prescription image to the vision-capable model configured through OmniRoute for structured extraction; declining keeps processing on-device.
 5. The user verifies or corrects patient, medicine, strength and dose fields against the original prescription before continuing. Extracted values remain unverified.
 
 ML Kit performs text recognition only. It does not understand prescriptions, resolve ambiguous handwriting, calculate safe doses, detect interactions, or determine whether a prescription is appropriate. It may misread drug names, decimal points, units, and handwritten text. If any value is unclear, do not guess.
