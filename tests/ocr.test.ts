@@ -33,7 +33,7 @@ describe('prescription field extraction', () => {
   });
 
   it('extracts weight when OCR reads the weight label before name and age', () => {
-    const text = ['Weight','Patient Name : Rahul Sharma','Age / Sex : 25 years / Male',': 60 kg','Presenting Complaints: Fever'].join('\\n');
+    const text = ['Weight','Patient Name : Rahul Sharma','Age / Sex : 25 years / Male',': 60 kg','Presenting Complaints: Fever'].join('\n');
     expect(extractPatientDetails(text)).toMatchObject({name:'Rahul Sharma',age:'25',gender:'Male',weightKg:'60'});
   });
 
