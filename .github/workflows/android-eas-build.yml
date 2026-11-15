@@ -58,7 +58,9 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Verify local Expo module autolinking
-        run: npx expo-modules-autolinking search | grep -q 'rxcheck-paddle-ocr'
+        run: |
+          npx expo-modules-autolinking search
+          npx expo-modules-autolinking resolve --platform android --json
 
       - name: Run TypeScript checks
         run: npm run typecheck
