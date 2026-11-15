@@ -30,7 +30,7 @@ export async function extractPrescriptionWithAI(prescriptionText: string): Promi
   if (!data.extracted || !Array.isArray(data.extracted.medicines)) throw new Error('AI returned an invalid prescription format.');
   return data.extracted;
 }
-/** Full image pipeline: image -> vision-capable OmniRoute model. */
+/** Full image pipeline: image -> Google Cloud Vision OCR -> conservative field parser. */
 export async function extractPrescriptionImageWithAI(uri: string): Promise<AIExtractedPrescription> {
   const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
   if (!base64 || base64.length > 16_000_000) throw new Error('Image is empty or exceeds the 12 MB processing limit.');
