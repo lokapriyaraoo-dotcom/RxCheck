@@ -67,7 +67,7 @@ export default function Scan() {
     <Text style={s.copy}>Capture a clear, well-lit image or select up to five pages. Keep the entire prescription flat and in frame.</Text>
     <Pressable disabled={busy} style={s.primary} onPress={()=>choose('camera')}><Text style={s.primaryText}>Take photo & read prescription</Text></Pressable>
     <Pressable disabled={busy} style={s.secondary} onPress={()=>choose('library')}><Text style={s.secondaryText}>Choose from gallery</Text></Pressable>
-    {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading prescription text on this device with Google ML Kit…</Text></View>}
+    {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading printed text on this device with Google ML Kit…</Text></View>}
     {images.map((uri,i)=><Image key={uri+'-'+i} source={{uri}} style={s.preview}/>)}
     {recognizedText?<>
       <View style={s.resultCard}>
@@ -83,9 +83,9 @@ export default function Scan() {
         {medicines.length?medicines.map((medicine,i)=><Text key={i} style={s.medicineLine}>{i+1}. {medicine.name||'Medicine'}{medicine.strength?' · '+medicine.strength:''}{medicine.dose?' · Dose: '+medicine.dose:''}</Text>):<Text style={s.copy}>No medicine rows could be mapped by on-device extraction. Enter medicine details manually and verify them against the original prescription.</Text>}
         <Text style={s.resultNote}>Detected {patientFieldCount} patient fields and {medicines.length} medicine candidates. OCR values are unverified.</Text>
       </View>
-      <View style={s.notice}><Text style={s.noticeTitle}>On-device OCR limitation</Text><Text style={s.noticeText}>RxCheck reads prescription images on this device; it does not upload the image for OCR. Complex layouts or handwriting may not be mapped into fields. Enter missing details manually and verify every value against the original.</Text></View>
+      <View style={s.notice}><Text style={s.noticeTitle}>On-device OCR limitation</Text><Text style={s.noticeText}>Printed text is read on this device with Google ML Kit; prescription images are not uploaded for OCR. Handwriting recognition is not integrated yet, so handwritten names, strengths and instructions must be entered manually. Verify every value against the original.</Text></View>
       <Pressable style={s.secondary} onPress={openReview}><Text style={s.secondaryText}>CONTINUE TO REVIEW</Text></Pressable>
-    </>:<View style={s.notice}><Text style={s.noticeTitle}>Important</Text><Text style={s.noticeText}>OCR may misread handwriting, medicine names, decimal points or units. If text is unclear, do not guess; ask a pharmacist or prescriber.</Text></View>}
+    </>:<View style={s.notice}><Text style={s.noticeTitle}>Important</Text><Text style={s.noticeText}>The current OCR reads printed text only and may still misread medicine names, decimal points or units. Handwriting recognition is not integrated yet. Enter handwritten details manually; if anything is unclear, do not guess—ask a pharmacist or prescriber.</Text></View>}
   </ScrollView>;
 }
 const s=StyleSheet.create({
