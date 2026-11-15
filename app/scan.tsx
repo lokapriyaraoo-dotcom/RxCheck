@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Link, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
 import { readPrescriptionImage, validateImageBytes, extractPatientDetails, extractMedicineCandidates } from '../services/ocr';
+import { readHandwrittenPrescriptionImage } from '../services/handwritingOcr';
 
 export default function Scan() {
   const router=useRouter();
@@ -30,6 +31,24 @@ export default function Scan() {
       if(completed.length) setRecognizedText(old=>[old,...completed].filter(Boolean).join('\n\n--- Next image ---\n\n'));
       if(failures.length) Alert.alert('Some images need attention',failures.join('\n\n'));
       if(!completed.length&&!failures.length) Alert.alert('No images','Choose a prescription image first.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function recognizeHandwriting() {
+    if (busy || !images.length) return;
+    setBusy(true);
+    try {
+      const pages: string[] = [];
+      for (const uri of images) {
+        const result = await readHandwrittenPrescriptionImage(uri);
+        pages.push(result.text);
+      }
+      setRecognizedText(old => [old, pages.join('\\n\\n--- Next handwritten page ---\\n\\n')].filter(Boolean).join('\\n\\n--- Experimental handwriting OCR ---\\n\\n'));
+      Alert.alert('Experimental handwriting result', 'The text has been added for review. Handwriting OCR can be wrong, especially for medicine names and doses. Verify every field against the original prescription.');
+    } catch (error) {
+      Alert.alert('Handwriting OCR unavailable', error instanceof Error ? error.message : 'Could not read handwriting. Enter the details manually.');
     } finally {
       setBusy(false);
     }
@@ -69,7 +88,7 @@ export default function Scan() {
     <Pressable disabled={busy} style={s.secondary} onPress={()=>choose('library')}><Text style={s.secondaryText}>Choose from gallery</Text></Pressable>
     {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading printed text on this device with Google ML Kit…</Text></View>}
     {images.map((uri,i)=><Image key={uri+'-'+i} source={{uri}} style={s.preview}/>)}
-    {recognizedText?<>
+    {images.length>0&&<Pressable disabled={busy} style={s.secondary} onPress={recognizeHandwriting}><Text style={s.secondaryText}>TRY HANDWRITING OCR (EXPERIMENTAL)</Text></Pressable>}\n    {recognizedText?<>
       <View style={s.resultCard}>
         <Text style={s.resultTitle}>PRESCRIPTION ATTACHED</Text>
         <Text style={s.copy}>Image text was read. The fields below are extracted on this device and will be prefilled on the next screen where identifiable. Check every value against the original.</Text>
@@ -83,9 +102,9 @@ export default function Scan() {
         {medicines.length?medicines.map((medicine,i)=><Text key={i} style={s.medicineLine}>{i+1}. {medicine.name||'Medicine'}{medicine.strength?' · '+medicine.strength:''}{medicine.dose?' · Dose: '+medicine.dose:''}</Text>):<Text style={s.copy}>No medicine rows could be mapped by on-device extraction. Enter medicine details manually and verify them against the original prescription.</Text>}
         <Text style={s.resultNote}>Detected {patientFieldCount} patient fields and {medicines.length} medicine candidates. OCR values are unverified.</Text>
       </View>
-      <View style={s.notice}><Text style={s.noticeTitle}>On-device OCR limitation</Text><Text style={s.noticeText}>Printed text is read on this device with Google ML Kit; prescription images are not uploaded for OCR. Handwriting recognition is not integrated yet, so handwritten names, strengths and instructions must be entered manually. Verify every value against the original.</Text></View>
+      <View style={s.notice}><Text style={s.noticeTitle}>On-device OCR limitation</Text><Text style={s.noticeText}>Printed text is read on this device with Google ML Kit. The optional PaddleOCR handwriting reader is experimental and may misread or omit words. Prescription images are not uploaded for OCR. Verify every medicine name, strength, dose, decimal, unit and instruction against the original.</Text></View>
       <Pressable style={s.secondary} onPress={openReview}><Text style={s.secondaryText}>CONTINUE TO REVIEW</Text></Pressable>
-    </>:<View style={s.notice}><Text style={s.noticeTitle}>Important</Text><Text style={s.noticeText}>The current OCR reads printed text only and may still misread medicine names, decimal points or units. Handwriting recognition is not integrated yet. Enter handwritten details manually; if anything is unclear, do not guess—ask a pharmacist or prescriber.</Text></View>}
+    </>:<View style={s.notice}><Text style={s.noticeTitle}>Important</Text><Text style={s.noticeText}>Printed OCR and experimental handwriting OCR both run on this device. Handwriting recognition is not clinically validated and may misread medicine names or doses. Enter unclear details manually; if anything is uncertain, do not guess—ask a pharmacist or prescriber.</Text></View>}
   </ScrollView>;
 }
 const s=StyleSheet.create({
