@@ -58,7 +58,7 @@ export default function Scan() {
   }
 
   function openReview(aiConsent:boolean) {
-    router.push({pathname:'/manual',params:{ocrText:recognizedText,aiConsent:aiConsent?'true':'false'}});
+    router.push({pathname:'/manual',params:{ocrText:recognizedText,aiConsent:aiConsent?'true':'false',imageUris:JSON.stringify(images)}});
   }
   function requestAIConsent() {
     if(!isAIConfigured()) {
