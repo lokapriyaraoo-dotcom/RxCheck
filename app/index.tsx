@@ -63,7 +63,7 @@ export default function Home() {
     <Text style={s.section}>GET STARTED</Text>
     <Action href="/scan" title="Prescription scanner" subtitle="Capture or choose a prescription image" />
     <Action href="/manual" title="Manual medicine entry" subtitle="Enter patient details and medicines yourself" />
-    <Action href="/history" title="Prescription history" subtitle="Review saved local sessions" />
+    <Action href="/history" title="Prescription history" subtitle="History is not saved in this prototype" />
     <Text style={s.footer}>Connect a compatible ECG device and validated data feed before displaying a real patient recording.</Text>
   </ScrollView>;
 }

@@ -47,7 +47,7 @@ Install and run checks:
     npm test
     npx expo-doctor
 
-The GitHub Actions workflow builds a standalone release APK on pushes to main that affect app, services, tests/dependencies/configuration, and uploads it as the RxCheck-Standalone-Android-APK artifact for 14 days. The workflow does not require a cloud OCR secret or endpoint.
+The GitHub Actions workflow builds a standalone release APK on pushes to main that affect app, services, backend, package configuration, app configuration, brand assets, or the Android build workflow itself. APK artifacts are retained for 14 days. The workflow does not require a cloud OCR secret or endpoint.
 
 ## Privacy and production readiness
 
