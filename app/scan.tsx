@@ -45,7 +45,7 @@ export default function Scan() {
         const result = await readHandwrittenPrescriptionImage(uri);
         pages.push(result.text);
       }
-      setRecognizedText(old => [old, pages.join('\\n\\n--- Next handwritten page ---\\n\\n')].filter(Boolean).join('\\n\\n--- Experimental handwriting OCR ---\\n\\n'));
+      setRecognizedText(old => [old, pages.join('\n\n--- Next handwritten page ---\n\n')].filter(Boolean).join('\n\n--- Experimental handwriting OCR ---\n\n'));
       Alert.alert('Experimental handwriting result', 'The text has been added for review. Handwriting OCR can be wrong, especially for medicine names and doses. Verify every field against the original prescription.');
     } catch (error) {
       Alert.alert('Handwriting OCR unavailable', error instanceof Error ? error.message : 'Could not read handwriting. Enter the details manually.');
@@ -88,7 +88,8 @@ export default function Scan() {
     <Pressable disabled={busy} style={s.secondary} onPress={()=>choose('library')}><Text style={s.secondaryText}>Choose from gallery</Text></Pressable>
     {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading printed text on this device with Google ML Kit…</Text></View>}
     {images.map((uri,i)=><Image key={uri+'-'+i} source={{uri}} style={s.preview}/>)}
-    {images.length>0&&<Pressable disabled={busy} style={s.secondary} onPress={recognizeHandwriting}><Text style={s.secondaryText}>TRY HANDWRITING OCR (EXPERIMENTAL)</Text></Pressable>}\n    {recognizedText?<>
+    {images.length>0&&<Pressable disabled={busy} style={s.secondary} onPress={recognizeHandwriting}><Text style={s.secondaryText}>TRY HANDWRITING OCR (EXPERIMENTAL)</Text></Pressable>}
+    {recognizedText?<>
       <View style={s.resultCard}>
         <Text style={s.resultTitle}>PRESCRIPTION ATTACHED</Text>
         <Text style={s.copy}>Image text was read. The fields below are extracted on this device and will be prefilled on the next screen where identifiable. Check every value against the original.</Text>
