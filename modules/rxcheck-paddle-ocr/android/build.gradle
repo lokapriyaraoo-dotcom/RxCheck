@@ -28,3 +28,74 @@ dependencies {
   implementation 'com.quickbirdstudios:opencv:4.5.3'
   implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
 }
+
+def paddleModelsDir = file("$projectDir/src/main/assets/models")
+def paddleModelFiles = [
+  det: new File(paddleModelsDir, 'det/inference.onnx'),
+  rec: new File(paddleModelsDir, 'rec/inference.onnx'),
+  yaml: new File(paddleModelsDir, 'rec/inference.yml')
+]
+
+tasks.register('downloadPaddleOcrModels') {
+  outputs.files(paddleModelFiles.values())
+  doLast {
+    def downloadVerified = { String url, File target, String expectedSha256 ->
+      target.parentFile.mkdirs()
+      if (target.exists()) {
+        def current = java.security.MessageDigest.getInstance('SHA-256').digest(target.bytes).encodeHex().toString()
+        if (current == expectedSha256) return
+        target.delete()
+      }
+      def temporary = new File(target.absolutePath + '.part')
+      def connection = new URL(url).openConnection()
+      connection.connectTimeout = 30000
+      connection.readTimeout = 180000
+      connection.setRequestProperty('User-Agent', 'RxCheck-Android-Build')
+      connection.inputStream.withCloseable { input ->
+        temporary.withOutputStream { output -> input.transferTo(output) }
+      }
+      def actual = java.security.MessageDigest.getInstance('SHA-256').digest(temporary.bytes).encodeHex().toString()
+      if (actual != expectedSha256) {
+        temporary.delete()
+        throw new GradleException("PaddleOCR model checksum mismatch for ${target.name}: ${actual}")
+      }
+      if (target.exists()) target.delete()
+      if (!temporary.renameTo(target)) throw new GradleException("Could not install PaddleOCR model ${target.name}")
+    }
+
+    // Immutable Hugging Face revisions; model files are verified before packaging.
+    downloadVerified(
+      'https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/df0bd9d/inference.onnx',
+      paddleModelFiles.det,
+      'a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d'
+    )
+    downloadVerified(
+      'https://huggingface.co/PaddlePaddle/en_PP-OCRv5_mobile_rec_onnx/resolve/3fafbc3b5dcf93dd72add9f48368be8a3a2cd33b/inference.onnx',
+      paddleModelFiles.rec,
+      'b5f833dfc5d0eb71da397b4efa06ebeee9b431b690a47d6af40d77d8eabc557f'
+    )
+
+    // The YAML dictionary/config is fetched from the same immutable model revision.
+    def yaml = paddleModelFiles.yaml
+    if (!yaml.exists() || yaml.length() < 1000) {
+      yaml.parentFile.mkdirs()
+      def temp = new File(yaml.absolutePath + '.part')
+      new URL('https://huggingface.co/PaddlePaddle/en_PP-OCRv5_mobile_rec_onnx/resolve/3fafbc3b5dcf93dd72add9f48368be8a3a2cd33b/inference.yml')
+        .openConnection().with { c ->
+          c.connectTimeout = 30000
+          c.readTimeout = 60000
+          c.inputStream.withCloseable { input -> temp.withOutputStream { output -> input.transferTo(output) } }
+        }
+      if (temp.length() < 1000) {
+        temp.delete()
+        throw new GradleException('PaddleOCR recognition dictionary download was incomplete')
+      }
+      if (yaml.exists()) yaml.delete()
+      if (!temp.renameTo(yaml)) throw new GradleException('Could not install PaddleOCR recognition dictionary')
+    }
+  }
+}
+
+tasks.named('preBuild').configure {
+  dependsOn(tasks.named('downloadPaddleOcrModels'))
+}
