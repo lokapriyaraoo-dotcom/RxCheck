@@ -6,6 +6,7 @@ on:
     paths:
       - "app/**"
       - "services/**"
+      - "backend/**"
       - "package.json"
       - "package-lock.json"
       - "app.json"
