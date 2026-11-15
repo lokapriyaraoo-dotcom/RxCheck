@@ -2,6 +2,10 @@ export type AIExtractedPrescription = {
   patient?: { name?: string; age?: string | number; gender?: string; weightKg?: string | number; allergies?: string };
   medicines?: Array<{ name?: string; strength?: string; dose?: string; unit?: string; frequency?: string; duration?: string; route?: string; instructions?: string; confidence?: number }>;
 };
+export function isAIConfigured(): boolean {
+  return Boolean(process.env.EXPO_PUBLIC_RXCHECK_AI_URL?.trim());
+}
+
 function endpointUrl(path: string) {
   const endpoint = process.env.EXPO_PUBLIC_RXCHECK_AI_URL?.trim();
   if (!endpoint) throw new Error('AI gateway is not configured. Local OCR extraction will be used; configure the secure RxCheck AI gateway to enable AI autofill.');
