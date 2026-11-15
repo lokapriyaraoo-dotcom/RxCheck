@@ -92,7 +92,7 @@ export default function Manual(){
     }
     Alert.alert(
       'Prescription attached',
-      'Allow AI prescription reading? The prescription image will be sent to the RxCheck secure gateway, processed by PaddleOCR-VL for layout and text, then structured by the configured AI provider. Continue only if you consent.',
+      'Allow AI prescription reading? The prescription image will be sent to the RxCheck secure gateway, processed by Google Cloud Vision document OCR, then structured by the configured AI provider. Continue only if you consent.',
       [
         {text:'NOT NOW',style:'cancel'},
         {text:'ALLOW AI AUTOFILL',onPress:()=>setAiConsent(true)}
@@ -149,7 +149,7 @@ export default function Manual(){
       <View style={s.detectedRow}><Text style={s.detectedLabel}>GENDER</Text><Text style={s.detectedValue}>{patient.gender||'Not detected'}</Text></View>
       <Text style={s.caption}>{patientCount} patient fields and {meds.length} medicine entries currently filled.</Text>
       {!aiConsent&&isAIConfigured()?<Pressable style={s.outline} onPress={requestAIConsent}><Text style={s.outlineText}>ALLOW AI AUTOFILL</Text></Pressable>:null}
-      {aiBusy?<Text style={s.caption}>Sending the consented prescription image to PaddleOCR-VL and organizing the extracted fields…</Text>:null}
+      {aiBusy?<Text style={s.caption}>Sending the consented prescription image to managed OCR and organizing the extracted fields…</Text>:null}
       {aiReview?<Text style={s.caption}>{aiReview}</Text>:null}
     </View>:null}
     <Text style={s.section}>PATIENT DETAILS</Text>
