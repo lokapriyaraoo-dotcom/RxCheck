@@ -40,6 +40,7 @@ export function extractPatientDetails(text: string): Partial<Patient> {
   return {
     ...(name ? {name} : {}), ...(age ? {age} : {}),
     ...(weightKg ? {weightKg} : {}),
+    ...(gender ? {gender: normalizedGender} : {}),
     ...(allergies ? {allergies} : {})
   };
 }
