@@ -17,7 +17,9 @@ function localMedicines(text:string,prefix='ocr'):Medicine[]{
 export default function Manual(){
   const router=useRouter();
   const params=useLocalSearchParams<{ocrText?:string;aiConsent?:string;imageUris?:string}>();
-  const initialText=typeof params.ocrText==='string'?params.ocrText:'';\n  const initialImages=(()=>{try{return params.imageUris?JSON.parse(params.imageUris) as string[]:[];}catch{return [];}})();\n  const [imageUris,setImageUris]=useState<string[]>(initialImages);
+  const initialText=typeof params.ocrText==='string'?params.ocrText:'';
+  const initialImages=(()=>{try{return params.imageUris?JSON.parse(params.imageUris) as string[]:[];}catch{return [];}})();
+  const [imageUris,setImageUris]=useState<string[]>(initialImages);
   const [ocrText,setOcrText]=useState(initialText);
   const [patient,setPatient]=useState<Patient>(()=>({...emptyPatient,...extractPatientDetails(initialText)}));
   const [meds,setMeds]=useState<Medicine[]>(()=>localMedicines(initialText));
@@ -90,7 +92,7 @@ export default function Manual(){
     }
     Alert.alert(
       'Prescription attached',
-      'Image text was read. Allow AI processing to fill the patient and medicine fields. The extracted text will be sent to the RxCheck secure AI gateway and configured provider.',
+      'Allow AI prescription reading? The prescription image will be sent to the RxCheck secure gateway, processed by PaddleOCR-VL for layout and text, then structured by the configured AI provider. Continue only if you consent.',
       [
         {text:'NOT NOW',style:'cancel'},
         {text:'ALLOW AI AUTOFILL',onPress:()=>setAiConsent(true)}
@@ -105,6 +107,7 @@ export default function Manual(){
     try{
       const read=await readPrescriptionImage(result.assets[0].uri);
       setAiConsent(false);
+      setImageUris([result.assets[0].uri]);
       setOcrText(read.text);
       const extractedPatient=extractPatientDetails(read.text);
       setPatient(old=>({...old,...Object.fromEntries(Object.entries(extractedPatient).filter(([,value])=>Boolean(value)))}));
@@ -126,7 +129,8 @@ export default function Manual(){
   }
   function next(){
     const prescribed=meds.map(m=>m.name.trim()).filter(Boolean);
-    const taking=currentMedsText.split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
+    const taking=currentMedsText.split(/[
+,;]+/).map(x=>x.trim()).filter(Boolean);
     const all=[...new Set([...prescribed,...taking])];
     if(!all.length){Alert.alert('Add medicines','Enter prescribed medicines and any other medicines currently being taken.');return;}
     router.push({pathname:'/interactions',params:{meds:JSON.stringify(all),prescribed:JSON.stringify(prescribed),taking:JSON.stringify(taking)}});
@@ -146,7 +150,7 @@ export default function Manual(){
       <View style={s.detectedRow}><Text style={s.detectedLabel}>GENDER</Text><Text style={s.detectedValue}>{patient.gender||'Not detected'}</Text></View>
       <Text style={s.caption}>{patientCount} patient fields and {meds.length} medicine entries currently filled.</Text>
       {!aiConsent&&isAIConfigured()?<Pressable style={s.outline} onPress={requestAIConsent}><Text style={s.outlineText}>ALLOW AI AUTOFILL</Text></Pressable>:null}
-      {aiBusy?<Text style={s.caption}>Sending the OCR text to the consented RxCheck AI gateway and organizing the fields…</Text>:null}
+      {aiBusy?<Text style={s.caption}>Sending the consented prescription image to PaddleOCR-VL and organizing the extracted fields…</Text>:null}
       {aiReview?<Text style={s.caption}>{aiReview}</Text>:null}
     </View>:null}
     <Text style={s.section}>PATIENT DETAILS</Text>
