@@ -30,7 +30,7 @@ export async function extractPrescriptionWithAI(prescriptionText: string): Promi
   if (!data.extracted || !Array.isArray(data.extracted.medicines)) throw new Error('AI returned an invalid prescription format.');
   return data.extracted;
 }
-/** Full image pipeline: image -> PaddleOCR-VL layout parsing -> OmniRoute structured extraction. */
+/** Full image pipeline: image -> Google Cloud Vision document OCR -> OmniRoute structured extraction. */
 export async function extractPrescriptionImageWithAI(uri: string): Promise<AIExtractedPrescription> {
   const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
   if (!base64 || base64.length > 16_000_000) throw new Error('Image is empty or exceeds the 12 MB processing limit.');
@@ -38,6 +38,6 @@ export async function extractPrescriptionImageWithAI(uri: string): Promise<AIExt
     imageBase64: base64,
     mimeType: 'image/jpeg'
   });
-  if (!data.extracted || !Array.isArray(data.extracted.medicines)) throw new Error('PaddleOCR-VL returned an invalid prescription format.');
+  if (!data.extracted || !Array.isArray(data.extracted.medicines)) throw new Error('Managed OCR + AI returned an invalid prescription format.');
   return data.extracted;
 }
