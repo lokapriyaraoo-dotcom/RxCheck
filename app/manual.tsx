@@ -11,7 +11,7 @@ const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')
 function localMedicines(text:string,prefix='ocr'):Medicine[]{
   return extractMedicineCandidates(text).map((m,i)=>({
     id:prefix+'-'+i,name:m.name||'',strength:m.strength||'',dose:m.dose||'',
-    unit:'unknown',frequency:'',duration:'',instructions:m.instructions||'',needsReview:true
+    unit:'unknown' as const,frequency:'',duration:'',instructions:m.instructions||'',needsReview:true
   }));
 }
 export default function Manual(){
