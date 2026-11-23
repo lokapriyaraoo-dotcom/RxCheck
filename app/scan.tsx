@@ -112,8 +112,8 @@ export default function Scan() {
     {handwritingStatus?<Text style={s.copy}>{handwritingStatus}</Text>:null}
     {recognizedText?<>
       <View style={s.resultCard}>
-        <Text style={s.resultTitle}>PRESCRIPTION ATTACHED</Text>
-        <Text style={s.copy}>Image text was read. The fields below are extracted on this device and will be prefilled on the next screen where identifiable. Check every value against the original.</Text>
+        <Text style={s.resultTitle}>TEXT READ FROM PRESCRIPTION</Text>
+        <Text style={s.copy}>Text was read from the selected image on this device. Possible patient and medicine fields are shown below; the original image is not carried to the review form. Check every value against the original.</Text>
         <View style={s.previewGrid}>
           <View style={s.previewItem}><Text style={s.fieldLabel}>PATIENT NAME</Text><Text style={s.fieldValue}>{patient.name||'Not detected'}</Text></View>
           <View style={s.previewItem}><Text style={s.fieldLabel}>AGE</Text><Text style={s.fieldValue}>{patient.age||'Not detected'}</Text></View>
