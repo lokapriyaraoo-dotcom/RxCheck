@@ -106,7 +106,8 @@ export default function Scan() {
     <Pressable disabled={busy} style={s.secondary} onPress={()=>choose('library')}><Text style={s.secondaryText}>Choose from gallery</Text></Pressable>
     {busy&&<View style={s.progress}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Reading text on this device…</Text></View>}
     {images.map((uri,i)=><Image key={uri+'-'+i} source={{uri}} style={s.preview}/>)}
-    {images.length>0&&<Pressable disabled={busy} style={s.secondary} onPress={recognizeHandwriting}><Text style={s.secondaryText}>TRY HANDWRITING OCR (EXPERIMENTAL)</Text></Pressable>}
+    {images.length>0&&<Pressable disabled={busy} style={s.secondary} onPress={recognizeHandwriting}><Text style={s.secondaryText}>RETRY AI HANDWRITING SCAN</Text></Pressable>}
+    {handwritingStatus?<Text style={s.copy}>{handwritingStatus}</Text>:null}
     {recognizedText?<>
       <View style={s.resultCard}>
         <Text style={s.resultTitle}>PRESCRIPTION ATTACHED</Text>
