@@ -75,13 +75,13 @@ export default function Home() {
       <PaperBanner />
       <View style={s.kickerRow}><View style={s.kickerDot}/><Text style={s.kicker}>READ THE SLIP ON THIS DEVICE</Text></View>
       <Text style={s.title}>Check a prescription before it is dispensed.</Text>
-      <Text style={s.intro}>Scan the paper and the name, age, weight, and each medicine dose fill in when the print is clear. Or type the chart yourself and attach the slip on that page. The rules are a short teaching set of 40 medicines, not a live medical record.</Text>
+      <Text style={s.intro}>Scan a prescription to extract possible text on this device. Printed-text OCR and experimental handwriting OCR can miss or misread medicine names and doses, so check every field against the original. You can also enter details manually. This prototype does not save patient records.</Text>
       <EcgMonitor />
-      <Action href="/scan" icon="camera" title="Scan the prescription" subtitle="Camera or gallery. Patient details and doses fill from the photo." />
-      <Action href="/manual" icon="keyboard" title="Enter details yourself" subtitle="Type the chart, and add a photo of the slip on the same page." />
+      <Action href="/scan" icon="camera" title="Scan the prescription" subtitle="Read a prescription image on this device. Review and correct any extracted details manually." />
+      <Action href="/manual" icon="keyboard" title="Enter details yourself" subtitle="Enter patient and medicine details manually. You can read a prescription image to help fill the form." />
       <View style={s.savedCard}>
         <Text style={s.savedTitle}>Saved checks</Text>
-        <Text style={s.savedText}>Nothing saved yet. A finished review stays in this browser only.</Text>
+        <Text style={s.savedText}>No reviews are saved. This prototype does not store patient or prescription history.</Text>
         <Link href="/history" style={s.savedLink}>View saved checks  ›</Link>
       </View>
       <Text style={s.footer}>RxCheck is a review aid, not a substitute for a pharmacist or clinician. Verify every extracted medicine and dose against the original prescription.</Text>
