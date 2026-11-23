@@ -24,11 +24,12 @@ export default function Scan() {
       for(const uri of uris) {
         let printedText = '';
         let handwritingText = '';
+        let printedError = '';
         try {
           const result=await readPrescriptionImage(uri);
           printedText = result.text;
         } catch(error) {
-          failures.push(error instanceof Error?error.message:'Printed OCR failed.');
+          printedError = error instanceof Error?error.message:'Printed OCR failed.';
         }
         // Run the local PaddleOCR AI model as a second pass. A failure here
         // never blocks the printed OCR result or manual review.
@@ -38,13 +39,14 @@ export default function Scan() {
           setHandwritingStatus('AI handwriting scan completed on this device. Verify all extracted values.');
         } catch(error) {
           setHandwritingStatus('Handwriting AI could not read this page; printed OCR remains available. Enter unclear details manually.');
-          if (!printedText) failures.push(error instanceof Error?error.message:'Handwriting OCR failed.');
+          if (!printedText) failures.push(error instanceof Error?error.message:printedError||'Handwriting OCR failed.');
         }
         const mergedLines = [...new Set(
           [...printedText.split(/\r?\n/), ...handwritingText.split(/\r?\n/)]
             .map(line=>line.trim()).filter(Boolean)
         )];
         if(mergedLines.length) completed.push(mergedLines.join('\n'));
+        else if(printedError && !failures.length) failures.push(printedError);
       }
       if(completed.length) setRecognizedText(old=>[old,...completed].filter(Boolean).join('\n\n--- Next image ---\n\n'));
       if(failures.length) Alert.alert('Some images need attention',failures.join('\n\n'));
