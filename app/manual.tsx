@@ -50,15 +50,41 @@ export default function Manual(){
     }
     setBusy(true);
     try{
-      const read=await readPrescriptionImage(asset.uri);
-      setOcrText(read.text);
-      const extractedPatient=extractPatientDetails(read.text);
+      let printedText='';
+      let handwritingText='';
+      const failures:string[]=[];
+      try{
+        const read=await readPrescriptionImage(asset.uri);
+        printedText=read.text;
+      }catch(error){
+        failures.push(error instanceof Error?error.message:'Printed-text OCR was unavailable.');
+      }
+      // Keep the printed and experimental handwriting passes independent:
+      // one engine failing must not discard useful text from the other.
+      try{
+        const handwritten=await readHandwrittenPrescriptionImage(asset.uri);
+        handwritingText=handwritten.text;
+      }catch(error){
+        failures.push(error instanceof Error?error.message:'Experimental handwriting OCR was unavailable.');
+      }
+      const text=[...new Set(
+        [...printedText.split(/\\r?\\n/),...handwritingText.split(/\\r?\\n/)]
+          .map(line=>line.trim()).filter(Boolean)
+      )].join('\\n');
+      if(!text)throw new Error(failures.join('\\n\\n')||'No readable text was detected. Try a clearer image or enter details manually.');
+      setOcrText(text);
+      const extractedPatient=extractPatientDetails(text);
       setPatient(old=>({...old,...Object.fromEntries(Object.entries(extractedPatient).filter(([,value])=>Boolean(value)))}));
-      const candidates=localMedicines(read.text,'attached');
+      const candidates=localMedicines(text,'attached');
       if(candidates.length)setMeds(candidates);
-      Alert.alert('Prescription attached','Image text was read. Patient and medicine fields detected on this device have been filled where identifiable.');
+      Alert.alert(
+        'Prescription text read',
+        failures.length
+          ? 'One OCR pass was unavailable. Available text was kept; check every field against the original and enter missing details manually.\\n\\n'+failures.join('\\n\\n')
+          : 'Printed-text and experimental handwriting OCR results were combined on this device. All extracted fields are unverified; check them against the original.'
+      );
     }catch(error){
-      Alert.alert('Could not read prescription',error instanceof Error?error.message:'Please try a clearer image.');
+      Alert.alert('Could not read prescription',error instanceof Error?error.message:'Please try a clearer image or enter details manually.');
     }finally{
       setBusy(false);
     }
