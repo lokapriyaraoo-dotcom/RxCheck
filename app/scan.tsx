@@ -41,10 +41,10 @@ export default function Scan() {
           if (!printedText) failures.push(error instanceof Error?error.message:'Handwriting OCR failed.');
         }
         const mergedLines = [...new Set(
-          [...printedText.split(/\\r?\\n/), ...handwritingText.split(/\\r?\\n/)]
+          [...printedText.split(/\r?\n/), ...handwritingText.split(/\r?\n/)]
             .map(line=>line.trim()).filter(Boolean)
         )];
-        if(mergedLines.length) completed.push(mergedLines.join('\\n'));
+        if(mergedLines.length) completed.push(mergedLines.join('\n'));
       }
       if(completed.length) setRecognizedText(old=>[old,...completed].filter(Boolean).join('\n\n--- Next image ---\n\n'));
       if(failures.length) Alert.alert('Some images need attention',failures.join('\n\n'));
