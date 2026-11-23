@@ -146,7 +146,7 @@ export default function Manual(){
     <Text style={s.section}>OTHER MEDICINES CURRENTLY TAKEN</Text>
     <Text style={s.caption}>Include regular medicines, OTC painkillers, vitamins and supplements. Separate names with commas or new lines.</Text>
     <TextInput multiline value={currentMedsText} onChangeText={setCurrentMedsText} placeholder="e.g. metformin 500 mg, aspirin 75 mg" textAlignVertical="top" style={[s.input,{minHeight:90}]}/>
-    <Pressable style={s.button} onPress={next}><Text style={s.buttonText}>Continue to interaction report →</Text></Pressable>
+    <Pressable style={s.button} onPress={next}><Text style={s.buttonText}>Continue to medicine-label lookup →</Text></Pressable>
     <Text style={s.foot}>OCR candidates are not confirmed prescriptions. This page does not validate dose, strength or whether a medicine is appropriate.</Text>
   </ScrollView>;
 }
