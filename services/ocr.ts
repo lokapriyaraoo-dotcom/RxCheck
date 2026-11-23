@@ -47,7 +47,7 @@ export function extractPatientDetails(text: string): Partial<Patient> {
 
 /** Extracts medicines from both row-wise and column-wise OCR layouts. */
 export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
-  const lines = text.replace(/\u00a0/g, ' ').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  const lines = text.replace(/\u00a0/g, ' ').replace(/\\n/g, '\n').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
   const headers: Record<string, RegExp> = {
     name: /^(?:drug\s*name|medicine\s*name|medication)\s*:?$/i,
     strength: /^strength\s*:?$/i,
