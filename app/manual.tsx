@@ -82,10 +82,10 @@ export default function Manual(){
     <Brand size={38}/>
     <Text style={s.title}>Review patient & medicine details</Text>
     <Text style={s.caption}>Prescription fields are filled from the scanned image where identifiable. Verify every value against the original before continuing.</Text>
-    <Pressable style={s.outline} onPress={attachPrescription} disabled={busy}><Text style={s.outlineText}>{busy?'Reading…':'＋ Attach another prescription image'}</Text></Pressable>
+    <Pressable style={s.outline} onPress={attachPrescription} disabled={busy}><Text style={s.outlineText}>{busy?'Reading…':'＋ Read another prescription image'}</Text></Pressable>
     {ocrText?<View style={s.ocrCard}>
-      <Text style={s.section}>PRESCRIPTION ATTACHED</Text>
-      <Text style={s.caption}>Image text was read locally. Detected fields are shown below; missing values must be entered manually. The image is not uploaded for OCR.</Text>
+      <Text style={s.section}>PRESCRIPTION TEXT READ LOCALLY</Text>
+      <Text style={s.caption}>Text was read locally from the selected image. The image itself is not retained on this review screen or uploaded for OCR. Detected fields are unverified; enter missing values manually.</Text>
       <View style={s.detectedRow}><Text style={s.detectedLabel}>AGE</Text><Text style={s.detectedValue}>{patient.age||'Not detected'}</Text></View>
       <View style={s.detectedRow}><Text style={s.detectedLabel}>WEIGHT</Text><Text style={s.detectedValue}>{patient.weightKg?patient.weightKg+' kg':'Not detected'}</Text></View>
       <View style={s.detectedRow}><Text style={s.detectedLabel}>GENDER</Text><Text style={s.detectedValue}>{patient.gender||'Not detected'}</Text></View>
