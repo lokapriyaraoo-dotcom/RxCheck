@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, ScrollView, Animated, Easing } from 
 import { Link } from 'expo-router';
 import { Brand } from '../components/Brand';
 
-const teal = '#0E6E63';
+const teal = '#117568';
 const ECG_BEAT_WIDTH = 180;
 const ECG_TRACE_WIDTH = ECG_BEAT_WIDTH * 3;
 const ECG_HEIGHT = 84;
@@ -28,6 +28,21 @@ const ECG_SEGMENTS=ECG_POINTS.slice(0,-1).map((a,i)=>{
   const b=ECG_POINTS[i+1],dx=b.x-a.x,dy=b.y-a.y;
   return {key:i,left:a.x,top:(a.y+b.y)/2,width:Math.hypot(dx,dy),angle:Math.atan2(dy,dx)};
 });
+
+function PaperBanner() {
+  return <View style={s.banner}>
+    <View style={s.paper}>
+      {Array.from({length:7},(_,i)=><View key={i} style={[s.paperRule,{top:20+i*16}]}/>)}
+      <View style={s.handwriting}>
+        {[0,1,2,3].map(i=><View key={i} style={[s.inkStroke,{top:i*13,width:72+(i%2)*24,transform:[{rotate:(i%2?'-':'')+'7deg'}]}]}/>)}
+      </View>
+    </View>
+    <View style={s.paperCorner}/>
+    <View style={s.pen}><View style={s.penTip}/></View>
+    <View style={s.fabric}/>
+  </View>;
+}
+
 function EcgMonitor() {
   const offset=useRef(new Animated.Value(0)).current;
   useEffect(()=>{
@@ -37,55 +52,84 @@ function EcgMonitor() {
   },[offset]);
   const translateX=offset.interpolate({inputRange:[0,1],outputRange:[0,-ECG_BEAT_WIDTH]});
   return <View style={s.ecgCard}>
-    <View style={s.ecgHeader}>
-      <Text style={s.ecgTitle}>LIVE ECG DISPLAY</Text>
-      <Text style={s.ecgTag}>DEMO SIGNAL</Text>
-    </View>
     <View style={s.ecgViewport}>
       <View style={s.ecgGrid}>
-        {Array.from({length:10},(_,i)=><View key={'v'+i} style={[s.gridVertical,{left:i*34}]}/>)}
-        {Array.from({length:4},(_,i)=><View key={'h'+i} style={[s.gridHorizontal,{top:i*22}]}/>)}
+        {Array.from({length:19},(_,i)=><View key={'v'+i} style={[s.ecgVertical,{left:i*17}]}/>)}
+        {Array.from({length:6},(_,i)=><View key={'h'+i} style={[s.ecgHorizontal,{top:i*14}]}/>)}
       </View>
       <Animated.View style={{width:ECG_TRACE_WIDTH,height:ECG_HEIGHT,transform:[{translateX}]}}>
-        {ECG_SEGMENTS.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2,borderRadius:2,backgroundColor:'#56D6B5',transform:[{rotate:segment.angle+'rad'}]}}/>)}
+        {ECG_SEGMENTS.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2.5,borderRadius:2,backgroundColor:'#16796C',transform:[{rotate:segment.angle+'rad'}]}}/>)}
       </Animated.View>
+      <View style={s.ecgCursor}/>
     </View>
-    <Text style={s.ecgCaption}>Simulated moving ECG waveform for display preview. No live patient ECG or sensor is connected.</Text>
   </View>;
 }
+
 export default function Home() {
-  return <ScrollView contentContainerStyle={s.page}>
-    <Text style={s.kicker}>MEDICATION SAFETY • REVIEW TOOL</Text>
-    <Brand size={62} />
-    <Text style={s.lead}>A clearer second look at a prescription.</Text>
-    <EcgMonitor />
-    <View style={s.notice}><Text style={s.noticeTitle}>For review, not prescribing</Text><Text style={s.noticeText}>This prototype can help organise prescription details. Always verify OCR and discuss possible risks with a qualified clinician or pharmacist.</Text></View>
-    <Text style={s.section}>GET STARTED</Text>
-    <Action href="/scan" title="Prescription scanner" subtitle="Capture or choose a prescription image" />
-    <Action href="/manual" title="Manual medicine entry" subtitle="Enter patient details and medicines yourself" />
-    <Action href="/history" title="Prescription history" subtitle="History is not saved in this prototype" />
-    <Text style={s.footer}>Connect a compatible ECG device and validated data feed before displaying a real patient recording.</Text>
-  </ScrollView>;
+  return <View style={s.screen}>
+    <View pointerEvents="none" style={s.backgroundGrid}>
+      {Array.from({length:30},(_,i)=><View key={'bgv'+i} style={[s.bgVertical,{left:i*34}]}/>)}
+      {Array.from({length:70},(_,i)=><View key={'bgh'+i} style={[s.bgHorizontal,{top:i*34}]}/>)}
+    </View>
+    <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
+      <PaperBanner />
+      <View style={s.kickerRow}><View style={s.kickerDot}/><Text style={s.kicker}>READ THE SLIP ON THIS DEVICE</Text></View>
+      <Text style={s.title}>Check a prescription before it is dispensed.</Text>
+      <Text style={s.intro}>Scan the paper and the name, age, weight, and each medicine dose fill in when the print is clear. Or type the chart yourself and attach the slip on that page. The rules are a short teaching set of 40 medicines, not a live medical record.</Text>
+      <EcgMonitor />
+      <Action href="/scan" icon="camera" title="Scan the prescription" subtitle="Camera or gallery. Patient details and doses fill from the photo." />
+      <Action href="/manual" icon="keyboard" title="Enter details yourself" subtitle="Type the chart, and add a photo of the slip on the same page." />
+      <View style={s.savedCard}>
+        <Text style={s.savedTitle}>Saved checks</Text>
+        <Text style={s.savedText}>Nothing saved yet. A finished review stays in this browser only.</Text>
+        <Link href="/history" style={s.savedLink}>View saved checks  ›</Link>
+      </View>
+      <Text style={s.footer}>RxCheck is a review aid, not a substitute for a pharmacist or clinician. Verify every extracted medicine and dose against the original prescription.</Text>
+    </ScrollView>
+  </View>;
 }
-function Action({ href, title, subtitle }: { href: '/scan' | '/manual' | '/history'; title: string; subtitle: string }) {
-  return <Link href={href} asChild><Pressable style={s.action}><View style={{flex:1}}><Text style={s.actionTitle}>{title}</Text><Text style={s.sub}>{subtitle}</Text></View><Text style={s.arrow}>›</Text></Pressable></Link>;
+
+function Action({ href, icon, title, subtitle }: { href: '/scan' | '/manual'; icon: 'camera' | 'keyboard'; title: string; subtitle: string }) {
+  return <Link href={href} asChild><Pressable style={s.action}>
+    <Text style={s.actionIcon}>{icon==='camera'?'▣':'▦'}</Text>
+    <Text style={s.actionTitle}>{title}</Text>
+    <Text style={s.actionText}>{subtitle}</Text>
+  </Pressable></Link>;
 }
+
 const s = StyleSheet.create({
-  page:{padding:24,paddingTop:54,gap:18},kicker:{fontSize:11,letterSpacing:1.6,color:'#6B7771',fontWeight:'700'},
-  lead:{fontSize:17,color:'#53635E',marginTop:-12},
-  ecgCard:{backgroundColor:'#102E2A',borderRadius:12,padding:16,gap:9},
-  ecgHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
-  ecgTitle:{fontSize:11,fontWeight:'800',letterSpacing:1.4,color:'#A7E6D8'},
-  ecgTag:{fontSize:9,fontWeight:'800',color:'#75BDAE',letterSpacing:1},
-  ecgViewport:{height:ECG_HEIGHT,overflow:'hidden',borderRadius:7,backgroundColor:'#0C2623'},
+  screen:{flex:1,backgroundColor:'#F3F6F1'},
+  backgroundGrid:{...StyleSheet.absoluteFillObject,overflow:'hidden'},
+  bgVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#DFE8E1'},
+  bgHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#DFE8E1'},
+  page:{paddingHorizontal:22,paddingTop:12,paddingBottom:36,gap:18},
+  banner:{height:132,borderRadius:15,overflow:'hidden',backgroundColor:'#E9E5D9',marginBottom:3,justifyContent:'center'},
+  paper:{position:'absolute',left:55,right:42,top:-22,bottom:-18,backgroundColor:'#F8F5E9',transform:[{rotate:'-5deg'}],borderRadius:5,borderWidth:1,borderColor:'#D9D2C2'},
+  paperRule:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#E4DCCB'},
+  handwriting:{position:'absolute',right:42,top:35,width:130,height:70,transform:[{rotate:'-3deg'}]},
+  inkStroke:{position:'absolute',right:0,height:2,backgroundColor:'#77786F',borderRadius:3,opacity:.65},
+  paperCorner:{position:'absolute',right:38,top:0,width:30,height:30,backgroundColor:'#E4DFD1',borderBottomLeftRadius:22,opacity:.9},
+  pen:{position:'absolute',right:58,top:-12,width:13,height:150,backgroundColor:'#176F68',borderRadius:7,transform:[{rotate:'-25deg'}],borderWidth:1,borderColor:'#0E5B55'},
+  penTip:{position:'absolute',bottom:-6,left:3,width:7,height:12,backgroundColor:'#C2B9A5',borderBottomLeftRadius:5,borderBottomRightRadius:5},
+  fabric:{position:'absolute',left:-20,bottom:-30,width:105,height:95,backgroundColor:'#F5F2E9',borderRadius:45,opacity:.9},
+  kickerRow:{flexDirection:'row',alignItems:'center',gap:10,marginTop:2},
+  kickerDot:{width:9,height:9,borderRadius:5,backgroundColor:teal},
+  kicker:{fontSize:12,letterSpacing:2.1,color:'#286F65',fontWeight:'700'},
+  title:{fontSize:27,lineHeight:34,fontWeight:'900',letterSpacing:-.5,color:'#172B27',marginTop:-2},
+  intro:{fontSize:16,lineHeight:25,color:'#52645D',marginTop:-2},
+  ecgCard:{height:102,backgroundColor:'#F7F3E9',borderRadius:17,borderWidth:1,borderColor:'#E0DCCE',paddingHorizontal:16,paddingVertical:9,justifyContent:'center',overflow:'hidden'},
+  ecgViewport:{height:84,overflow:'hidden',borderRadius:5,backgroundColor:'#F7F3E9'},
   ecgGrid:{...StyleSheet.absoluteFillObject},
-  gridVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#1B4942'},
-  gridHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#1B4942'},
-  ecgCaption:{fontSize:11,color:'#C2D8D1',lineHeight:16},
-  notice:{backgroundColor:'#FFF4DE',borderLeftWidth:3,borderLeftColor:'#B7791F',padding:16,borderRadius:10,gap:5},
-  noticeTitle:{fontWeight:'800',color:'#754B12'},noticeText:{color:'#745B36',lineHeight:20},
-  section:{fontSize:11,fontWeight:'800',letterSpacing:1.4,color:'#6B7771',marginTop:8},
-  action:{backgroundColor:'#FFFFFF',borderRadius:10,padding:18,flexDirection:'row',alignItems:'center',borderWidth:1,borderColor:'#E1E7E1',shadowColor:'#142B25',shadowOpacity:.04,shadowRadius:8,elevation:1},
-  actionTitle:{fontSize:16,fontWeight:'800',color:'#1D332F'},sub:{fontSize:13,color:'#718079',marginTop:4},
-  arrow:{fontSize:27,color:teal,marginLeft:12},footer:{fontSize:12,color:'#829089',lineHeight:18,marginTop:8}
+  ecgVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#E8D8CF'},
+  ecgHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#E8D8CF'},
+  ecgCursor:{position:'absolute',right:'22%',top:0,bottom:0,width:2,backgroundColor:'#78A99D',opacity:.85},
+  action:{backgroundColor:'#FCFDFC',borderRadius:15,padding:19,borderWidth:1,borderColor:'#DDE5DF',minHeight:142,justifyContent:'center',shadowColor:'#183B32',shadowOpacity:.035,shadowRadius:7,elevation:1},
+  actionIcon:{fontSize:24,color:teal,fontWeight:'700',marginBottom:12},
+  actionTitle:{fontSize:18,fontWeight:'800',color:'#1C302B',marginBottom:7},
+  actionText:{fontSize:15,lineHeight:23,color:'#5C6B65'},
+  savedCard:{backgroundColor:'#FCFDFC',borderRadius:15,padding:20,borderWidth:1,borderColor:'#DDE5DF',gap:9},
+  savedTitle:{fontSize:18,fontWeight:'800',color:'#1C302B'},
+  savedText:{fontSize:15,lineHeight:23,color:'#5C6B65'},
+  savedLink:{fontSize:14,fontWeight:'700',color:teal,marginTop:2},
+  footer:{fontSize:12,lineHeight:18,color:'#7A8982',marginTop:2},
 });
