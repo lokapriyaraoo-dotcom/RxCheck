@@ -11,6 +11,7 @@ export default function Scan() {
   const [images,setImages]=useState<string[]>([]);
   const [recognizedText,setRecognizedText]=useState('');
   const [busy,setBusy]=useState(false);
+  const [handwritingStatus,setHandwritingStatus]=useState('');
   const patient=extractPatientDetails(recognizedText);
   const medicines=extractMedicineCandidates(recognizedText);
   const patientFieldCount=[patient.name,patient.age,patient.gender,patient.weightKg,patient.allergies].filter(Boolean).length;
@@ -21,12 +22,29 @@ export default function Scan() {
     const failures:string[]=[];
     try {
       for(const uri of uris) {
+        let printedText = '';
+        let handwritingText = '';
         try {
           const result=await readPrescriptionImage(uri);
-          completed.push(result.text);
+          printedText = result.text;
         } catch(error) {
-          failures.push(error instanceof Error?error.message:'Image recognition failed.');
+          failures.push(error instanceof Error?error.message:'Printed OCR failed.');
         }
+        // Run the local PaddleOCR AI model as a second pass. A failure here
+        // never blocks the printed OCR result or manual review.
+        try {
+          const handwriting = await readHandwrittenPrescriptionImage(uri);
+          handwritingText = handwriting.text;
+          setHandwritingStatus('AI handwriting scan completed on this device. Verify all extracted values.');
+        } catch(error) {
+          setHandwritingStatus('Handwriting AI could not read this page; printed OCR remains available. Enter unclear details manually.');
+          if (!printedText) failures.push(error instanceof Error?error.message:'Handwriting OCR failed.');
+        }
+        const mergedLines = [...new Set(
+          [...printedText.split(/\\r?\\n/), ...handwritingText.split(/\\r?\\n/)]
+            .map(line=>line.trim()).filter(Boolean)
+        )];
+        if(mergedLines.length) completed.push(mergedLines.join('\\n'));
       }
       if(completed.length) setRecognizedText(old=>[old,...completed].filter(Boolean).join('\n\n--- Next image ---\n\n'));
       if(failures.length) Alert.alert('Some images need attention',failures.join('\n\n'));
