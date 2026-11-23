@@ -90,8 +90,9 @@ export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
   // dosage-form prefix; never guess a drug name from arbitrary handwriting.
   if (!out.length) {
     const formLine = /^(?:\d+[.)]\s*)?(?:tab(?:let)?s?|t\.?|cap(?:sule)?s?|cap\.?|syp(?:rup)?|syp\.?|susp(?:ension)?|inj(?:ection)?|inj\.?|drops?|oint(?:ment)?|cream|gel|powder)\.?\s+(.+)$/i;
-    const schedulePattern = /\b(?:\d+\s*[-–]\s*\d+\s*[-–]\s*\d+(?:\s*[-–]\s*\d+)?|OD|BD|BID|TDS|TID|QID|QDS|HS|SOS|PRN|STAT|once\s+daily|twice\s+daily|thrice\s+daily)\b/i;
-    const durationPattern = /(?:\bx\s*|\bfor\s+)(\d+\s*(?:days?|d|weeks?|wks?|months?))\b/i;
+    const schedulePattern = /\b(?:\d+\s*[-–]\s*\d+\s*[-–]\s*\d+(?:\s*[-–]\s*\d+)?|OD|BD|BID|TDS|TID|QID|QDS|HS|SOS|PRN|STAT|once\s+daily|twice\s+daily|thrice\s+daily|\d+\s*(?:morning|afternoon|evening|eve|night|AR|AC|PC)(?:\s*[,/]\s*\d+\s*(?:morning|afternoon|evening|eve|night|AR|AC|PC))*)\b/i;
+    const durationPattern = /(?:\bx\s*|\bfor\s+)?(\d+\s*(?:days?|d|weeks?|wks?|months?))\b/i;
+    const instructionsPattern = /\b(?:after|before)\s+(?:food|meals?)\b/i;
     for (let i = 0; i < lines.length; i++) {
       const source = lines[i].replace(/^\s*\d+[.)]?\s+/, '').trim();
       const start = source.match(formLine);
@@ -102,9 +103,15 @@ export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
         combined += ' ' + next;
         i++;
       }
+      const following = lines[i + 1]?.trim() || '';
+      if (following && (durationPattern.test(following) || instructionsPattern.test(following)) && !formLine.test(following)) {
+        combined += ' ' + following;
+        i++;
+      }
       const schedule = combined.match(schedulePattern);
       const duration = combined.match(durationPattern)?.[1]?.replace(/\s+/g, ' ').trim() || '';
-      const nameAndStrength = schedule ? combined.slice(0, schedule.index).trim() : combined;
+      const nameAndStrength = (schedule ? combined.slice(0, schedule.index) : combined)
+        .replace(durationPattern, '').replace(instructionsPattern, '').trim();
       const strengthMatch = nameAndStrength.match(/\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|g|ml|iu|units?|%)\b/i);
       const strength = strengthMatch?.[0]?.replace(/\s+/g, ' ').trim() || '';
       const name = nameAndStrength
@@ -114,7 +121,7 @@ export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
       out.push({
         name, strength, dose: '', unit: 'unknown',
         frequency: schedule?.[0]?.trim() || '',
-        duration, instructions: '', needsReview: true
+        duration, instructions: combined.match(instructionsPattern)?.[0] || '', needsReview: true
       });
     }
   }
