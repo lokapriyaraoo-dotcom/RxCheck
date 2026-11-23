@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Brand } from '../components/Brand';
 import { emptyPatient, type Medicine, type Patient } from '../services/types';
 import { extractPatientDetails, extractMedicineCandidates, readPrescriptionImage, validateImageBytes } from '../services/ocr';
+import { readHandwrittenPrescriptionImage } from '../services/handwritingOcr';
 
 const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')=><View style={{gap:5}}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChange} placeholder={placeholder} style={s.input}/></View>;
 function localMedicines(text:string,prefix='ocr'):Medicine[]{
