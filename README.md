@@ -6,13 +6,13 @@ RxCheck is an Android prototype that helps organise text from a prescription for
 
 ## What the current app does
 
-- Capture a prescription photo or select up to five images.
+- Capture a prescription photo or select up to five images. The scanner can show the selected image during the scan flow; the original image is not carried into the manual review form or saved as prescription history.
 - Read printed text on-device with Google ML Kit Text Recognition v2 (expo-mlkit-ocr). An experimental PaddleOCR PP-OCRv5 mobile native Android path is also included for a separate handwriting attempt; it runs locally with ONNX Runtime and OpenCV.
-- Apply conservative, local pattern matching to identify some patient fields and medicine candidates.
+- Apply conservative, local pattern matching to suggest some patient fields and medicine candidates. Extraction is incomplete and unverified; the app does not guarantee that every medicine or dose is detected.
 - Let the user correct or enter patient and medicine details manually, including strength, dose, frequency and duration.
 - Query the public openFDA Drug Label API for individual label excerpts by medicine name. This is NOT a pairwise interaction checker.
 - Provide external medicine-name search links for prescribed medicines only. RxCheck does not confirm availability, price or suitability.
-- Show that prescription history is not saved. Do not enter real patient data into a prototype unless an appropriate privacy/security review has been completed.
+- Do not save prescription history. Patient and medicine details are not persisted as review history. Do not enter real patient data into a prototype unless an appropriate privacy/security review has been completed.
 
 ## Free OCR and privacy
 
@@ -28,9 +28,9 @@ ML Kit recognises printed text; the local parser only recognises common labelled
 
 Every OCR field is an UNVERIFIED CANDIDATE. The user must compare each field with the original prescription before continuing. If any name, strength, dose, decimal, unit or instruction is unclear, do not guess; ask a pharmacist or prescriber.
 
-## Handwriting recognition roadmap
+## Experimental handwriting OCR status
 
-The selected next step is an offline Android-native handwriting OCR engine alongside the existing ML Kit printed-text path. PaddleOCR PP-OCRv5 mobile is the candidate because its English recognition model is small and reports improved handwritten-English recognition. This is not yet integrated or validated in RxCheck. A safe implementation requires the official Android SDK, both detection and recognition model assets, pinned model revisions and SHA-256 checks, an Expo native-module bridge, Android release-build compatibility checks, and testing against representative handwritten prescriptions. The UI must not label handwriting as supported until those checks pass. Even after integration, all extracted fields remain unverified and require human confirmation.
+An offline Android-native PaddleOCR PP-OCRv5 path is now integrated alongside Google ML Kit printed-text recognition. The Android build downloads pinned detection and recognition ONNX models and verifies their SHA-256 hashes; inference reads local image URIs on-device. The handwriting path remains experimental and is not clinically validated. It can fail to initialize, omit text, or misread medicine names, strengths and doses. It must never be treated as a verified prescription. Every extracted value must be checked against the original and unclear details entered manually. A successful CI build does not establish handwriting accuracy on real prescriptions.
 
 ## Interaction and label lookup limitations
 
