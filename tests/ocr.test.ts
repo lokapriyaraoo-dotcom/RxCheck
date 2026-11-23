@@ -81,7 +81,7 @@ describe('prescription field extraction', () => {
       '1-0-1 x 5 days',
       'Cap. ExampleTwo 250 mg',
       '0-1-0 x 3 days'
-    ].join('\\n'));
+    ].join('\n'));
     expect(meds).toHaveLength(2);
     expect(meds[0]).toMatchObject({
       name: 'ExampleOne', strength: '500 mg', frequency: '1-0-1', duration: '5 days', needsReview: true
