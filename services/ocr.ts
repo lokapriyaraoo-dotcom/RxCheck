@@ -85,6 +85,40 @@ export function extractMedicineCandidates(text: string): Partial<Medicine>[] {
       });
     }
   }
+  // Handwritten/free-form prescriptions often put the medicine on one line and
+  // the dose schedule on the next. Only parse rows anchored by an explicit
+  // dosage-form prefix; never guess a drug name from arbitrary handwriting.
+  if (!out.length) {
+    const formLine = /^(?:\d+[.)]\s*)?(?:tab(?:let)?s?|t\.?|cap(?:sule)?s?|cap\.?|syp(?:rup)?|syp\.?|susp(?:ension)?|inj(?:ection)?|inj\.?|drops?|oint(?:ment)?|cream|gel|powder)\.?\s+(.+)$/i;
+    const schedulePattern = /\b(?:\d+\s*[-–]\s*\d+\s*[-–]\s*\d+(?:\s*[-–]\s*\d+)?|OD|BD|BID|TDS|TID|QID|QDS|HS|SOS|PRN|STAT|once\s+daily|twice\s+daily|thrice\s+daily)\b/i;
+    const durationPattern = /(?:\bx\s*|\bfor\s+)(\d+\s*(?:days?|d|weeks?|wks?|months?))\b/i;
+    for (let i = 0; i < lines.length; i++) {
+      const source = lines[i].replace(/^\s*\d+[.)]?\s+/, '').trim();
+      const start = source.match(formLine);
+      if (!start) continue;
+      let combined = start[1].trim();
+      const next = lines[i + 1]?.trim() || '';
+      if (next && schedulePattern.test(next) && !formLine.test(next)) {
+        combined += ' ' + next;
+        i++;
+      }
+      const schedule = combined.match(schedulePattern);
+      const duration = combined.match(durationPattern)?.[1]?.replace(/\s+/g, ' ').trim() || '';
+      const nameAndStrength = schedule ? combined.slice(0, schedule.index).trim() : combined;
+      const strengthMatch = nameAndStrength.match(/\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|g|ml|iu|units?|%)\b/i);
+      const strength = strengthMatch?.[0]?.replace(/\s+/g, ' ').trim() || '';
+      const name = nameAndStrength
+        .replace(/\b(?:\d+(?:\.\d+)?\s*(?:mg|mcg|µg|g|ml|iu|units?|%))\b/ig, '')
+        .replace(/[,:;–-]+$/g, '').replace(/\s+/g, ' ').trim();
+      if (!name || name.length < 2) continue;
+      out.push({
+        name, strength, dose: '', unit: 'unknown',
+        frequency: schedule?.[0]?.trim() || '',
+        duration, instructions: '', needsReview: true
+      });
+    }
+  }
+
   // Row-wise table fallback: serial number, medicine, strength, dose, frequency and route.
   if (!out.length) {
     const seen = new Set<string>();
