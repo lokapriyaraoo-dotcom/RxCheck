@@ -74,7 +74,7 @@ export default function Home() {
     <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
       <PaperBanner />
       <View style={s.kickerRow}><View style={s.kickerDot}/><Text style={s.kicker}>READ THE SLIP ON THIS DEVICE</Text></View>
-      <Text style={s.title}>Check a prescription before it is dispensed.</Text>
+      <Text style={s.title}>Organise prescription details for pharmacist review.</Text>
       <Text style={s.intro}>Scan a prescription to extract possible text on this device. Printed-text OCR and experimental handwriting OCR can miss or misread medicine names and doses, so check every field against the original. You can also enter details manually. This prototype does not save patient records.</Text>
       <EcgMonitor />
       <Action href="/scan" icon="camera" title="Scan the prescription" subtitle="Read a prescription image on this device. Review and correct any extracted details manually." />
