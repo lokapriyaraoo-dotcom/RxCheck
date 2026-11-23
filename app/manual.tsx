@@ -68,10 +68,10 @@ export default function Manual(){
         failures.push(error instanceof Error?error.message:'Experimental handwriting OCR was unavailable.');
       }
       const text=[...new Set(
-        [...printedText.split(/\\r?\\n/),...handwritingText.split(/\\r?\\n/)]
+        [...printedText.split(/\r?\n/),...handwritingText.split(/\r?\n/)]
           .map(line=>line.trim()).filter(Boolean)
-      )].join('\\n');
-      if(!text)throw new Error(failures.join('\\n\\n')||'No readable text was detected. Try a clearer image or enter details manually.');
+      )].join('\n');
+      if(!text)throw new Error(failures.join('\n\n')||'No readable text was detected. Try a clearer image or enter details manually.');
       setOcrText(text);
       const extractedPatient=extractPatientDetails(text);
       setPatient(old=>({...old,...Object.fromEntries(Object.entries(extractedPatient).filter(([,value])=>Boolean(value)))}));
@@ -80,7 +80,7 @@ export default function Manual(){
       Alert.alert(
         'Prescription text read',
         failures.length
-          ? 'One OCR pass was unavailable. Available text was kept; check every field against the original and enter missing details manually.\\n\\n'+failures.join('\\n\\n')
+          ? 'One OCR pass was unavailable. Available text was kept; check every field against the original and enter missing details manually.\\n\\n'+failures.join('\n\n')
           : 'Printed-text and experimental handwriting OCR results were combined on this device. All extracted fields are unverified; check them against the original.'
       );
     }catch(error){
