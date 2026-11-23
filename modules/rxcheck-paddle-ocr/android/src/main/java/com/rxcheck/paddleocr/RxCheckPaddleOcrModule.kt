@@ -4,6 +4,7 @@ import android.net.Uri
 import com.paddle.ocr.EngineConfig
 import com.paddle.ocr.PaddleOCR
 import com.paddle.ocr.PaddleOCRConfig
+import com.paddle.ocr.util.OpenCVUtils
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.Dispatchers
@@ -31,15 +32,10 @@ class RxCheckPaddleOcrModule : Module() {
           else -> throw IllegalArgumentException("Only local file and content URIs are supported")
         }
         if (bytes.isEmpty()) throw IllegalArgumentException("Selected image is empty")
-        // PaddleOCR's Android SDK requires the OpenCV JNI library to be loaded
-        // explicitly before model creation. OpenCVLoader.initDebug() can return
-        // false with the QuickBird Gradle AAR even when the JNI library is packaged.
-        try {
-          System.loadLibrary("opencv_java4")
-        } catch (error: UnsatisfiedLinkError) {
+        // Use PaddleOCR's own OpenCV initializer before creating the model.
+        if (!OpenCVUtils.init(context)) {
           throw IllegalStateException(
-            "OpenCV native library could not be loaded. Check that the APK includes libopencv_java4.so for this device ABI.",
-            error
+            "OpenCV native library could not be loaded. Check that the APK includes libopencv_java4.so for this device ABI."
           )
         }
 
