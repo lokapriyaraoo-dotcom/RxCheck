@@ -80,7 +80,7 @@ export default function Manual(){
       Alert.alert(
         'Prescription text read',
         failures.length
-          ? 'One OCR pass was unavailable. Available text was kept; check every field against the original and enter missing details manually.\\n\\n'+failures.join('\n\n')
+          ? 'One OCR pass was unavailable. Available text was kept; check every field against the original and enter missing details manually.\n\n'+failures.join('\n\n')
           : 'Printed-text and experimental handwriting OCR results were combined on this device. All extracted fields are unverified; check them against the original.'
       );
     }catch(error){
