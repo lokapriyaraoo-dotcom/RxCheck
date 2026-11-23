@@ -75,5 +75,21 @@ describe('prescription field extraction', () => {
     expect(meds[0]).toMatchObject({name:'Paracetamol',strength:'500 mg',dose:'500 mg',frequency:'Every 2 hours'});
     expect(meds[2]).toMatchObject({name:'Primaquine',strength:'7.5 mg',dose:'15 mg'});
   });
+  it('maps handwritten dosage-form rows when instructions are on the following line', () => {
+    const meds = extractMedicineCandidates([
+      'Tab. ExampleOne 500 mg',
+      '1-0-1 x 5 days',
+      'Cap. ExampleTwo 250 mg',
+      '0-1-0 x 3 days'
+    ].join('\\n'));
+    expect(meds).toHaveLength(2);
+    expect(meds[0]).toMatchObject({
+      name: 'ExampleOne', strength: '500 mg', frequency: '1-0-1', duration: '5 days', needsReview: true
+    });
+    expect(meds[1]).toMatchObject({
+      name: 'ExampleTwo', strength: '250 mg', frequency: '0-1-0', duration: '3 days', needsReview: true
+    });
+  });
+
 
 });
