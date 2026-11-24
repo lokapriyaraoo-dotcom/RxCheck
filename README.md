@@ -36,7 +36,7 @@ An offline Android-native PaddleOCR PP-OCRv5 path is now integrated alongside Go
 
 The app queries individual openFDA product labels for up to eight medicine names. The lookup may return no match or be unavailable/rate-limited. A matching label excerpt is not a pairwise interaction result and does not establish safety. Remaining names beyond the eight-item lookup limit are not queried and are labelled as such in the UI.
 
-No automated integration is configured for Drugs.com, Medscape, FDA FDALabel full-text search or Cyntegrity. The app must not imply that those sources have been queried. No validated dose-range, allergy, pregnancy, kidney/liver, duplicate-therapy or interaction engine is included.
+The Final Report includes a link to the Drugs.com interaction checker for manual professional review; RxCheck does not query, scrape, license, or import Drugs.com results. No automated integration is configured for Drugs.com, Medscape, FDA FDALabel full-text search or Cyntegrity. The app must not imply that those sources have been queried. The Final Report includes a structured, manual pharmacokinetic ADME review section (absorption, distribution, metabolism/CYP and transporters, excretion) and a generic-substitution investigation section (ingredient, strength, form, release characteristics, manufacturer and bioequivalence/regulatory evidence). These are documentation prompts, not automated interaction or substitution engines. No validated dose-range, allergy, pregnancy, kidney/liver, duplicate-therapy or interaction engine is included.
 
 ## Build requirements
 
@@ -58,7 +58,7 @@ The GitHub Actions workflow builds a standalone release APK on pushes to main th
 - Prescription images and OCR text are handled locally by the scan flow.
 - Medicine names are sent to openFDA only when the user opens the label lookup screen.
 - No patient/prescription history is stored by the current prototype.
-- PDF export utility code is not currently exposed as a user-facing screen.
+- The consolidated Final Report screen can export a PDF containing prescription summary, interaction/safety notes, a professional checklist, pharmacy search links, generic-substitution review notes, recommendations and sign-off fields. PDF fields are user-entered and require professional verification.
 - Before production use, add a threat model, validated data sources, encryption and access controls for any future storage, retention/deletion controls, clinical governance, usability validation, and applicable Indian privacy/regulatory review.
 
 ## Project checks
