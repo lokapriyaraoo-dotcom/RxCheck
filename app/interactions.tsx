@@ -78,14 +78,14 @@ export default function Interactions(){
  return <ScrollView contentContainerStyle={s.page}>
   <Link href="/" style={s.back}>‹ Home</Link><Brand size={38}/>
   <Text style={s.title}>FDA medicine-label lookup</Text>
-  <Text style={s.copy}>This combined report checks each possible medicine pair for review and retrieves individual FDA product-label information. Pairwise severity remains UNKNOWN until a validated clinical interaction source is connected; label text alone cannot establish a pairwise interaction. When you use this lookup, medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
+  <Text style={s.copy}>This screen is an FDA medicine-label lookup, not a validated drug-interaction checker. It retrieves individual product-label information for the entered medicines. Pairwise interaction status below is NOT CHECKED because no validated clinical interaction source is connected; label text alone cannot establish whether two medicines interact. When you use this lookup, medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
   <View style={s.card}><Text style={s.section}>MEDICINES ENTERED</Text>{list.length?list.map((m,i)=><Text key={i} style={s.med}>• {m}</Text>):<Text style={s.copy}>No medicine names were supplied. Return to patient details and add all prescribed and currently used medicines.</Text>}</View>
   <View style={s.report}>
-   <Text style={s.reportTitle}>Drug–drug interaction check</Text>
-   <Text style={s.copy}>Every entered medicine pair is listed below. The current app has no validated clinical interaction database connected, so the result is marked UNKNOWN—not major, moderate, minor or safe. FDA label excerpts below are supporting product information, not a pairwise interaction verdict.</Text>
+   <Text style={s.reportTitle}>Interaction status — not checked by RxCheck</Text>
+   <Text style={s.copy}>The pairs below are listed only to show which combinations still need a pharmacist or clinician review. RxCheck does not check or classify these interactions. No validated clinical interaction database is connected, so each pair is NOT CHECKED / UNKNOWN—not major, moderate, minor or safe. FDA label excerpts below are individual product information, not a pairwise interaction verdict.</Text>
    {!pairs.length?<Text style={s.copy}>Enter at least two medicines to create medicine pairs for review.</Text>:pairs.map((pair,i)=><View key={pair.first+'-'+pair.second} style={s.finding}>
     <Text style={s.findingTitle}>{pair.first} + {pair.second}</Text>
-    <Text style={s.pairUnknown}>UNKNOWN — interaction severity not established</Text>
+    <Text style={s.pairUnknown}>NOT CHECKED — interaction severity unknown</Text>
     <Text style={s.copy}>Possible interaction: not assessed. No validated pairwise source is connected, so RxCheck cannot determine whether this combination causes a major, moderate or minor interaction.</Text>
     <Text style={s.copy}>Recommended action: ask a pharmacist or prescribing clinician to check both medicines together, including their strengths, doses and timing.</Text>
     <Text style={s.altTitle}>Alternative medicine</Text>
