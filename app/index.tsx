@@ -1,161 +1,31 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, Animated, Easing } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import { Brand } from '../components/Brand';
-
-const teal = '#117568';
-const ECG_BEAT_WIDTH = 180;
-const ECG_HEIGHT = 84;
-const ECG_SCALE = 0.8;
-const ECG_TEMPLATE = [
-  {x:0,y:42},{x:12,y:42},{x:19,y:38},{x:27,y:42},{x:43,y:42},
-  {x:49,y:47},{x:55,y:9},{x:62,y:72},{x:69,y:42},{x:96,y:42},
-  {x:108,y:35},{x:119,y:31},{x:131,y:34},{x:143,y:42},{x:180,y:42},
-];
-function ecgY(x:number) {
-  const beatX=x%ECG_BEAT_WIDTH;
-  for(let i=0;i<ECG_TEMPLATE.length-1;i++){
-    const a=ECG_TEMPLATE[i],b=ECG_TEMPLATE[i+1];
-    if(beatX>=a.x&&beatX<=b.x){
-      const ratio=(beatX-a.x)/(b.x-a.x);
-      return a.y+(b.y-a.y)*ratio;
-    }
-  }
-  return 42;
+const ink='#102F2C', teal='#087E72', muted='#61736E';
+function Tile({href,icon,title,detail}:{href:'/scan'|'/manual'|'/interactions'|'/safety'|'/buy'|'/history'|'/consult';icon:string;title:string;detail:string}) {
+ return <Link href={href} asChild><Pressable style={s.tile}><View style={s.icon}><Text style={s.iconText}>{icon}</Text></View><View style={s.copy}><Text style={s.tileTitle}>{title}</Text><Text style={s.detail}>{detail}</Text></View><Text style={s.chevron}>›</Text></Pressable></Link>;
 }
-function PaperBanner() {
-  return <View style={s.banner}>
-    <View style={s.paper}>
-      {Array.from({length:7},(_,i)=><View key={i} style={[s.paperRule,{top:20+i*16}]}/>)}
-      <View style={s.handwriting}>
-        {[0,1,2,3].map(i=><View key={i} style={[s.inkStroke,{top:i*13,width:72+(i%2)*24,transform:[{rotate:(i%2?'-':'')+'7deg'}]}]}/>)}
-      </View>
-    </View>
-    <View style={s.paperCorner}/>
-    <View style={s.pen}><View style={s.penTip}/></View>
-    <View style={s.fabric}/>
-  </View>;
-}
-
-function EcgMonitor() {
-  const progress=useRef(new Animated.Value(0)).current;
-  const [width,setWidth]=useState(0);
-  useEffect(()=>{
-    const animation=Animated.loop(Animated.timing(progress,{
-      toValue:1,
-      duration:1800,
-      easing:Easing.linear,
-      useNativeDriver:true,
-    }));
-    animation.start();
-    return ()=>animation.stop();
-  },[progress]);
-
-  const beatPixels=ECG_BEAT_WIDTH*ECG_SCALE;
-  const traceWidth=width/ECG_SCALE+ECG_BEAT_WIDTH;
-  const segments=useMemo(()=>{
-    if(width<=0)return [];
-    const points=Array.from({length:Math.ceil(traceWidth/3)+1},(_,i)=>{
-      const x=i*3;
-      return {x:x*ECG_SCALE,y:ecgY(x)};
-    });
-    return points.slice(0,-1).map((a,i)=>{
-      const b=points[i+1],dx=b.x-a.x,dy=b.y-a.y;
-      return {
-        key:i,
-        left:a.x,
-        top:(a.y+b.y)/2,
-        width:Math.hypot(dx,dy),
-        angle:Math.atan2(dy,dx),
-      };
-    });
-  },[traceWidth,width]);
-
-  const scrollX=progress.interpolate({
-    inputRange:[0,1],
-    outputRange:[0,-beatPixels],
-  });
-
-  return <View style={s.ecgCard}>
-    <View style={s.ecgViewport} onLayout={event=>setWidth(event.nativeEvent.layout.width)}>
-      <View style={s.ecgGrid}>
-        {Array.from({length:19},(_,i)=><View key={'v'+i} style={[s.ecgVertical,{left:i*17}]}/>)}
-        {Array.from({length:6},(_,i)=><View key={'h'+i} style={[s.ecgHorizontal,{top:i*14}]}/>)}
-      </View>
-      {width>0?<Animated.View style={[s.ecgTrace,{width:width+beatPixels,transform:[{translateX:scrollX}]}]}>
-        {segments.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2.5,borderRadius:2,backgroundColor:'#16796C',transform:[{rotate:segment.angle+'rad'}]}}/>)}
-      </Animated.View>:null}
-      <View pointerEvents="none" style={s.ecgCursor}/>
-    </View>
-  </View>;
-}
-
-export default function Home() {
-  return <View style={s.screen}>
-    <View pointerEvents="none" style={s.backgroundGrid}>
-      {Array.from({length:30},(_,i)=><View key={'bgv'+i} style={[s.bgVertical,{left:i*34}]}/>)}
-      {Array.from({length:70},(_,i)=><View key={'bgh'+i} style={[s.bgHorizontal,{top:i*34}]}/>)}
-    </View>
-    <ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
-      <PaperBanner />
-      <View style={s.kickerRow}><View style={s.kickerDot}/><Text style={s.kicker}>READ THE SLIP ON THIS DEVICE</Text></View>
-      <Text style={s.title}>Organise prescription details for pharmacist review.</Text>
-      <Text style={s.intro}>Scan a prescription to extract possible text on this device. Printed-text OCR and experimental handwriting OCR can miss or misread medicine names and doses, so check every field against the original. You can also enter details manually. This prototype does not save patient records.</Text>
-      <EcgMonitor />
-      <Action href="/scan" icon="camera" title="Scan the prescription" subtitle="Read a prescription image on this device. Review and correct any extracted details manually." />
-      <Action href="/manual" icon="keyboard" title="Enter details yourself" subtitle="Enter patient and medicine details manually. You can read a prescription image to help fill the form." />
-      <View style={s.savedCard}>
-        <Text style={s.savedTitle}>Saved checks</Text>
-        <Text style={s.savedText}>No reviews are saved. This prototype does not store patient or prescription history.</Text>
-        <Link href="/history" style={s.savedLink}>View saved checks  ›</Link>
-      </View>
-      <Text style={s.footer}>RxCheck is a review aid, not a substitute for a pharmacist or clinician. Verify every extracted medicine and dose against the original prescription.</Text>
-    </ScrollView>
-  </View>;
-}
-
-function Action({ href, icon, title, subtitle }: { href: '/scan' | '/manual'; icon: 'camera' | 'keyboard'; title: string; subtitle: string }) {
-  return <Link href={href} asChild><Pressable style={s.action}>
-    <Text style={s.actionIcon}>{icon==='camera'?'▣':'▦'}</Text>
-    <Text style={s.actionTitle}>{title}</Text>
-    <Text style={s.actionText}>{subtitle}</Text>
-  </Pressable></Link>;
-}
-
-const s = StyleSheet.create({
-  screen:{flex:1,backgroundColor:'#F3F6F1'},
-  backgroundGrid:{...StyleSheet.absoluteFillObject,overflow:'hidden'},
-  bgVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#DFE8E1'},
-  bgHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#DFE8E1'},
-  page:{paddingHorizontal:22,paddingTop:12,paddingBottom:36,gap:18},
-  banner:{height:132,borderRadius:15,overflow:'hidden',backgroundColor:'#E9E5D9',marginBottom:3,justifyContent:'center'},
-  paper:{position:'absolute',left:55,right:42,top:-22,bottom:-18,backgroundColor:'#F8F5E9',transform:[{rotate:'-5deg'}],borderRadius:5,borderWidth:1,borderColor:'#D9D2C2'},
-  paperRule:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#E4DCCB'},
-  handwriting:{position:'absolute',right:42,top:35,width:130,height:70,transform:[{rotate:'-3deg'}]},
-  inkStroke:{position:'absolute',right:0,height:2,backgroundColor:'#77786F',borderRadius:3,opacity:.65},
-  paperCorner:{position:'absolute',right:38,top:0,width:30,height:30,backgroundColor:'#E4DFD1',borderBottomLeftRadius:22,opacity:.9},
-  pen:{position:'absolute',right:58,top:-12,width:13,height:150,backgroundColor:'#176F68',borderRadius:7,transform:[{rotate:'-25deg'}],borderWidth:1,borderColor:'#0E5B55'},
-  penTip:{position:'absolute',bottom:-6,left:3,width:7,height:12,backgroundColor:'#C2B9A5',borderBottomLeftRadius:5,borderBottomRightRadius:5},
-  fabric:{position:'absolute',left:-20,bottom:-30,width:105,height:95,backgroundColor:'#F5F2E9',borderRadius:45,opacity:.9},
-  kickerRow:{flexDirection:'row',alignItems:'center',gap:10,marginTop:2},
-  kickerDot:{width:9,height:9,borderRadius:5,backgroundColor:teal},
-  kicker:{fontSize:12,letterSpacing:2.1,color:'#286F65',fontWeight:'700'},
-  title:{fontSize:27,lineHeight:34,fontWeight:'900',letterSpacing:-.5,color:'#172B27',marginTop:-2},
-  intro:{fontSize:16,lineHeight:25,color:'#52645D',marginTop:-2},
-  ecgCard:{height:102,backgroundColor:'#F7F3E9',borderRadius:17,borderWidth:1,borderColor:'#E0DCCE',paddingHorizontal:16,paddingVertical:9,justifyContent:'center',overflow:'hidden'},
-  ecgViewport:{height:84,overflow:'hidden',borderRadius:5,backgroundColor:'#F7F3E9'},
-  ecgGrid:{...StyleSheet.absoluteFillObject},
-  ecgVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#E8D8CF'},
-  ecgHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#E8D8CF'},
-  ecgTrace:{position:'absolute',left:0,top:0,bottom:0,overflow:'hidden'},
-  ecgCursor:{position:'absolute',right:0,top:0,bottom:0,width:2,backgroundColor:'#78A99D',opacity:.75},
-  action:{backgroundColor:'#FCFDFC',borderRadius:15,padding:19,borderWidth:1,borderColor:'#DDE5DF',minHeight:142,justifyContent:'center',shadowColor:'#183B32',shadowOpacity:.035,shadowRadius:7,elevation:1},
-  actionIcon:{fontSize:24,color:teal,fontWeight:'700',marginBottom:12},
-  actionTitle:{fontSize:18,fontWeight:'800',color:'#1C302B',marginBottom:7},
-  actionText:{fontSize:15,lineHeight:23,color:'#5C6B65'},
-  savedCard:{backgroundColor:'#FCFDFC',borderRadius:15,padding:20,borderWidth:1,borderColor:'#DDE5DF',gap:9},
-  savedTitle:{fontSize:18,fontWeight:'800',color:'#1C302B'},
-  savedText:{fontSize:15,lineHeight:23,color:'#5C6B65'},
-  savedLink:{fontSize:14,fontWeight:'700',color:teal,marginTop:2},
-  footer:{fontSize:12,lineHeight:18,color:'#7A8982',marginTop:2},
+export default function Home(){return <View style={s.screen}><ScrollView contentContainerStyle={s.page} showsVerticalScrollIndicator={false}>
+ <View style={s.top}><View><Text style={s.brand}>Rx<Text style={{color:teal}}>Check</Text></Text><Text style={s.tag}>MEDICINE SAFETY, MADE CLEAR</Text></View><View style={s.pill}><View style={s.dot}/><Text style={s.pillText}>PATIENT SPACE</Text></View></View>
+ <View style={s.hero}><Text style={s.kicker}>YOUR HEALTH, IN ONE PLACE</Text><Text style={s.heroTitle}>Understand your medicines. Feel more informed.</Text><Text style={s.heroBody}>Organise prescriptions, review possible medicine interactions and prepare to speak with a healthcare professional.</Text><Link href="/scan" asChild><Pressable style={s.cta}><Text style={s.ctaText}>＋  Check a prescription</Text><Text style={s.arrow}>→</Text></Pressable></Link><Text style={s.privacy}>✓  Prescription text is read on this device</Text><View pointerEvents="none" style={s.orb}/></View>
+ <View><Text style={s.eyebrow}>RXCHECK TOOLS</Text><Text style={s.heading}>What would you like to do?</Text></View>
+ <View style={s.list}>
+ <Tile href="/scan" icon="▧" title="Scan prescription" detail="Read an image and review extracted details."/>
+ <Tile href="/manual" icon="✎" title="Enter medicines" detail="Add medicine details manually."/>
+ <Tile href="/interactions" icon="⇄" title="Check interactions" detail="Review possible interactions between listed medicines."/>
+ <Tile href="/safety" icon="♡" title="Smart safety report" detail="Prepare a checklist for professional review."/>
+ <Tile href="/buy" icon="＋" title="Find medicines" detail="Open pharmacy search pages and verify products."/>
+ <Tile href="/history" icon="◷" title="Check history" detail="View saved checks available on this device."/>
+ </View>
+ <View style={s.consult}><Text style={s.consultKicker}>✚  PROFESSIONAL SUPPORT</Text><Text style={s.consultTitle}>A medicine question? Talk to a doctor.</Text><Text style={s.consultBody}>Explore consultation options and take your RxCheck findings into a conversation with a qualified professional.</Text><Link href="/consult" asChild><Pressable style={s.consultBtn}><Text style={s.consultBtnText}>Explore doctor consultation</Text><Text style={s.arrow}>→</Text></Pressable></Link></View>
+ <View style={s.notice}><Text style={s.info}>i</Text><Text style={s.noticeText}>RxCheck is an informational review aid, not a diagnosis or a substitute for a doctor or pharmacist. OCR can make mistakes. Confirm every medicine and instruction against the original prescription. Do not change treatment based only on this app.</Text></View>
+ <Text style={s.footer}>RXCHECK  •  PATIENT HEALTH COMPANION</Text>
+ </ScrollView></View>}
+const s=StyleSheet.create({
+ screen:{flex:1,backgroundColor:'#F4F7F4'},page:{padding:20,paddingTop:18,paddingBottom:36,gap:20},
+ top:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},brand:{fontSize:27,fontWeight:'900',letterSpacing:-1.2,color:ink},tag:{fontSize:9,fontWeight:'800',letterSpacing:1.5,color:'#81918A',marginTop:2},
+ pill:{flexDirection:'row',alignItems:'center',gap:7,backgroundColor:'#E8F2EE',padding:9,borderRadius:20},dot:{width:7,height:7,borderRadius:4,backgroundColor:'#159579'},pillText:{fontSize:9,fontWeight:'800',color:'#36766A'},
+ hero:{backgroundColor:'#103F3A',borderRadius:25,padding:21,overflow:'hidden'},kicker:{alignSelf:'flex-start',fontSize:9,fontWeight:'900',letterSpacing:1.2,color:'#BDE7D9',backgroundColor:'#245A53',padding:8,borderRadius:18,marginBottom:14},heroTitle:{fontSize:29,lineHeight:35,fontWeight:'900',letterSpacing:-.8,color:'#FFF',maxWidth:310},heroBody:{fontSize:14,lineHeight:21,color:'#C6DAD4',marginTop:10},cta:{marginTop:18,backgroundColor:'#BDEBD9',borderRadius:13,padding:14,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},ctaText:{fontSize:14,fontWeight:'800',color:'#123F39'},arrow:{fontSize:19,fontWeight:'900',color:'#123F39'},privacy:{fontSize:10,color:'#C6DAD4',marginTop:12},orb:{position:'absolute',width:125,height:125,borderRadius:70,borderWidth:1,borderColor:'#3D7168',right:-70,top:-45},
+ eyebrow:{fontSize:10,fontWeight:'900',letterSpacing:1.7,color:teal,marginBottom:5},heading:{fontSize:21,fontWeight:'900',letterSpacing:-.5,color:ink},
+ list:{gap:10},tile:{flexDirection:'row',alignItems:'center',backgroundColor:'#FFF',borderRadius:16,padding:13,borderWidth:1,borderColor:'#E5ECE7',minHeight:80},icon:{width:43,height:43,borderRadius:14,backgroundColor:'#EAF4EF',alignItems:'center',justifyContent:'center',marginRight:12},iconText:{fontSize:21,color:teal,fontWeight:'800'},copy:{flex:1,gap:4},tileTitle:{fontSize:15,fontWeight:'800',color:ink},detail:{fontSize:12,lineHeight:17,color:muted},chevron:{fontSize:25,color:'#8BA49B',paddingLeft:7},
+ consult:{backgroundColor:'#E6F1EB',borderRadius:21,padding:18,borderWidth:1,borderColor:'#D3E5DA'},consultKicker:{fontSize:9,fontWeight:'900',letterSpacing:1.3,color:'#39796D',marginBottom:12},consultTitle:{fontSize:22,lineHeight:27,fontWeight:'900',color:ink},consultBody:{fontSize:13,lineHeight:20,color:'#526E65',marginTop:8},consultBtn:{marginTop:15,backgroundColor:'#123F39',borderRadius:12,padding:13,flexDirection:'row',alignItems:'center',justifyContent:'space-between'},consultBtnText:{fontSize:13,fontWeight:'800',color:'#FFF'},notice:{flexDirection:'row',gap:10,padding:13,backgroundColor:'#F0F1EB',borderRadius:13},info:{width:19,height:19,textAlign:'center',textAlignVertical:'center',borderRadius:10,backgroundColor:'#E0E5D9',color:'#5C7165',fontWeight:'900',overflow:'hidden'},noticeText:{flex:1,fontSize:11,lineHeight:17,color:'#68766F'},footer:{fontSize:9,fontWeight:'800',letterSpacing:1.4,textAlign:'center',color:'#9AA8A0'}
 });
