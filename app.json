@@ -3,13 +3,12 @@
     "name": "RxCheck",
     "slug": "rx-check",
     "scheme": "rxcheck",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "plugins": [
       "expo-router",
-      "expo-dev-client",
       [
         "expo-camera",
         {
@@ -33,7 +32,7 @@
     ],
     "android": {
       "package": "com.rxcheck.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES"
