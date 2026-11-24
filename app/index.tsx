@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Animated, Easing } from 'react-native';
 import { Link } from 'expo-router';
 import { Brand } from '../components/Brand';
@@ -44,23 +44,29 @@ function PaperBanner() {
 }
 
 function EcgMonitor() {
-  const offset=useRef(new Animated.Value(0)).current;
+  const progress=useRef(new Animated.Value(0)).current;
+  const [width,setWidth]=useState(0);
   useEffect(()=>{
-    const animation=Animated.loop(Animated.timing(offset,{toValue:1,duration:2400,easing:Easing.linear,useNativeDriver:true}));
+    const animation=Animated.loop(Animated.timing(progress,{toValue:1,duration:2600,easing:Easing.linear,useNativeDriver:false}));
     animation.start();
     return ()=>animation.stop();
-  },[offset]);
-  const translateX=offset.interpolate({inputRange:[0,1],outputRange:[0,-ECG_BEAT_WIDTH]});
+  },[progress]);
+  const revealWidth=progress.interpolate({inputRange:[0,1],outputRange:[0,width]});
+  const cursorX=progress.interpolate({inputRange:[0,1],outputRange:[0,width]});
+  const scale=width/ECG_TRACE_WIDTH;
+  const segments=useMemo(()=>ECG_SEGMENTS.map(segment=>({...segment,left:segment.left*scale,top:segment.top*scale,width:segment.width*scale})),[scale]);
   return <View style={s.ecgCard}>
-    <View style={s.ecgViewport}>
+    <View style={s.ecgViewport} onLayout={event=>setWidth(event.nativeEvent.layout.width)}>
       <View style={s.ecgGrid}>
         {Array.from({length:19},(_,i)=><View key={'v'+i} style={[s.ecgVertical,{left:i*17}]}/>)}
         {Array.from({length:6},(_,i)=><View key={'h'+i} style={[s.ecgHorizontal,{top:i*14}]}/>)}
       </View>
-      <Animated.View style={{width:ECG_TRACE_WIDTH,height:ECG_HEIGHT,transform:[{translateX}]}}>
-        {ECG_SEGMENTS.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2.5,borderRadius:2,backgroundColor:'#16796C',transform:[{rotate:segment.angle+'rad'}]}}/>)}
-      </Animated.View>
-      <View style={s.ecgCursor}/>
+      {width>0?<Animated.View style={[s.ecgReveal,{width:revealWidth}]}>
+        <View style={{width,height:ECG_HEIGHT}}>
+          {segments.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2.5,borderRadius:2,backgroundColor:'#16796C',transform:[{rotate:segment.angle+'rad'}]}}/>)}
+        </View>
+      </Animated.View>:null}
+      <Animated.View style={[s.ecgCursor,{transform:[{translateX:cursorX}]}]}/>
     </View>
   </View>;
 }
@@ -122,7 +128,8 @@ const s = StyleSheet.create({
   ecgGrid:{...StyleSheet.absoluteFillObject},
   ecgVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#E8D8CF'},
   ecgHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#E8D8CF'},
-  ecgCursor:{position:'absolute',right:'22%',top:0,bottom:0,width:2,backgroundColor:'#78A99D',opacity:.85},
+  ecgReveal:{position:'absolute',left:0,top:0,bottom:0,overflow:'hidden'},
+  ecgCursor:{position:'absolute',left:0,top:0,bottom:0,width:3,backgroundColor:'#78A99D',opacity:.95},
   action:{backgroundColor:'#FCFDFC',borderRadius:15,padding:19,borderWidth:1,borderColor:'#DDE5DF',minHeight:142,justifyContent:'center',shadowColor:'#183B32',shadowOpacity:.035,shadowRadius:7,elevation:1},
   actionIcon:{fontSize:24,color:teal,fontWeight:'700',marginBottom:12},
   actionTitle:{fontSize:18,fontWeight:'800',color:'#1C302B',marginBottom:7},
