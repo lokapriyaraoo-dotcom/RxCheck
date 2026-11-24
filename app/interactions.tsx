@@ -54,6 +54,7 @@ export default function Interactions(){
  const list=uniqueNames(medicines);
  const [loading,setLoading]=useState(false);
  const [evidence,setEvidence]=useState<LabelEvidence[]>([]);
+ const [expandedLabels,setExpandedLabels]=useState<Record<string,boolean>>({});
  const router=useRouter();
  useEffect(()=>{
    let live=true;
@@ -109,8 +110,11 @@ export default function Interactions(){
    {!loading&&unavailableCount>0?<Text style={s.copy}>FDA lookup could not be completed for {unavailableCount} medicine name(s), for example because the service was unavailable or rate-limited. Those names were not checked; retry later.</Text>:null}
    {!loading&&matched.map((item,i)=><View key={i} style={s.finding}>
     <Text style={s.findingTitle}>{item.medicine} — FDA label matched</Text>
-    {item.interactions.length?item.interactions.map((t,j)=><Text key={j} style={s.copy}>{t}</Text>):<Text style={s.copy}>No Drug Interactions section was returned in this matching label record. This does not rule out an interaction.</Text>}
-    {item.warnings.map((t,j)=><Text key={'w'+j} style={s.copy}>Label warning: {t}</Text>)}
+    <Pressable onPress={()=>setExpandedLabels(old=>({...old,[item.medicine]:!old[item.medicine]}))}><Text style={s.detailsToggle}>{expandedLabels[item.medicine]?'Hide details':'View details'}</Text></Pressable>
+    {expandedLabels[item.medicine]?<View style={s.detailsBox}>
+      {item.interactions.length?item.interactions.map((t,j)=><Text key={j} numberOfLines={3} style={s.copy}>{t}</Text>):<Text style={s.copy}>No Drug Interactions section was returned in this matching label record. This does not rule out an interaction.</Text>}
+      {item.warnings.map((t,j)=><Text key={'w'+j} numberOfLines={3} style={s.copy}>Label warning: {t}</Text>)}
+    </View>:null}
    </View>)}
    {!loading&&hasInteractionText?<Text style={s.copy}>These are excerpts from individual product labels. They are not a validated pairwise interaction verdict.</Text>:null}
   </View>
@@ -130,4 +134,4 @@ export default function Interactions(){
   <Text style={s.foot}>Source: openFDA Drug Label API. Source lookup is limited as described above. Unavailable sources are not treated as checked.</Text>
  </ScrollView>;
 }
-const s=StyleSheet.create({page:{padding:22,paddingTop:48,gap:13},back:{color:'#0E6E63',fontWeight:'700'},title:{fontSize:27,fontWeight:'800',color:'#172B28'},copy:{fontSize:13,color:'#63716B',lineHeight:20},med:{fontSize:15,fontWeight:'700',color:'#1D332F'},section:{fontSize:11,fontWeight:'800',letterSpacing:1.3,color:'#0E6E63',marginBottom:8},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#E0E7E1',borderRadius:10,padding:15,gap:7},report:{backgroundColor:'#FFF',borderRadius:10,padding:15,gap:12,borderWidth:1,borderColor:'#D9E5DF'},reportTitle:{fontSize:18,fontWeight:'800',color:'#1D332F'},row:{flexDirection:'row',gap:10,alignItems:'center'},finding:{borderTopWidth:1,borderTopColor:'#E7ECE8',paddingTop:10,gap:6},quickSummary:{backgroundColor:'#F2F7F3',padding:12,borderRadius:9,gap:7},findingTitle:{fontSize:14,fontWeight:'800',color:'#0E6E63'},pairUnknown:{fontSize:13,fontWeight:'800',color:'#8A5A13'},altTitle:{fontSize:14,fontWeight:'800',color:'#1D332F',marginTop:4},coverage:{backgroundColor:'#F0F5F1',padding:15,borderRadius:10,gap:7},warning:{backgroundColor:'#FFF4DE',padding:15,borderRadius:10,gap:6},warningTitle:{fontWeight:'800',color:'#754B12'},next:{backgroundColor:'#0E6E63',padding:16,borderRadius:10,alignItems:'center',marginTop:10},nextText:{color:'#FFF',fontWeight:'800'},foot:{fontSize:12,color:'#7B8781',lineHeight:18,marginTop:8}});
+const s=StyleSheet.create({page:{padding:22,paddingTop:48,gap:13},back:{color:'#0E6E63',fontWeight:'700'},title:{fontSize:27,fontWeight:'800',color:'#172B28'},copy:{fontSize:13,color:'#63716B',lineHeight:20},med:{fontSize:15,fontWeight:'700',color:'#1D332F'},section:{fontSize:11,fontWeight:'800',letterSpacing:1.3,color:'#0E6E63',marginBottom:8},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#E0E7E1',borderRadius:10,padding:15,gap:7},report:{backgroundColor:'#FFF',borderRadius:10,padding:15,gap:12,borderWidth:1,borderColor:'#D9E5DF'},reportTitle:{fontSize:18,fontWeight:'800',color:'#1D332F'},row:{flexDirection:'row',gap:10,alignItems:'center'},finding:{borderTopWidth:1,borderTopColor:'#E7ECE8',paddingTop:10,gap:6},quickSummary:{backgroundColor:'#F2F7F3',padding:12,borderRadius:9,gap:7},findingTitle:{fontSize:14,fontWeight:'800',color:'#0E6E63'},detailsToggle:{fontSize:13,fontWeight:'900',color:'#0E6E63',paddingVertical:5},detailsBox:{backgroundColor:'#F6F9F6',padding:10,borderRadius:8,gap:6},pairUnknown:{fontSize:13,fontWeight:'800',color:'#8A5A13'},altTitle:{fontSize:14,fontWeight:'800',color:'#1D332F',marginTop:4},coverage:{backgroundColor:'#F0F5F1',padding:15,borderRadius:10,gap:7},warning:{backgroundColor:'#FFF4DE',padding:15,borderRadius:10,gap:6},warningTitle:{fontWeight:'800',color:'#754B12'},next:{backgroundColor:'#0E6E63',padding:16,borderRadius:10,alignItems:'center',marginTop:10},nextText:{color:'#FFF',fontWeight:'800'},foot:{fontSize:12,color:'#7B8781',lineHeight:18,marginTop:8}});
