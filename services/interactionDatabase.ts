@@ -1,7 +1,7 @@
 /**
  * RxCheck interaction database contract, version 1.
  *
- * Intentionally ships with no clinical rules or ingredient aliases. Clinical
+ * Ships with exact generic-name ingredient mappings but no clinical interaction rules. Clinical
  * records must be sourced from licensed/public evidence and reviewed by a
  * qualified pharmacist before they can produce a severity classification.
  */
