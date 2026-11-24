@@ -70,11 +70,29 @@ export default function Interactions(){
  const notFoundCount=evidence.filter(x=>x.status==='not-found').length;
  const unavailableCount=evidence.filter(x=>x.status==='unavailable').length;
  const hasInteractionText=matched.some(x=>x.interactions.length>0);
+ const pairs=useMemo(()=>{
+   const result:{first:string;second:string}[]=[];
+   for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++)result.push({first:list[i],second:list[j]});
+   return result;
+ },[params.meds]);
  return <ScrollView contentContainerStyle={s.page}>
   <Link href="/" style={s.back}>‹ Home</Link><Brand size={38}/>
   <Text style={s.title}>FDA medicine-label lookup</Text>
-  <Text style={s.copy}>This page searches individual FDA product labels by medicine name. It is not a pairwise drug-interaction checker and does not assess dose, strength, timing or patient-specific risks. When you use this lookup, medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
+  <Text style={s.copy}>This combined report checks each possible medicine pair for review and retrieves individual FDA product-label information. Pairwise severity remains UNKNOWN until a validated clinical interaction source is connected; label text alone cannot establish a pairwise interaction. When you use this lookup, medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
   <View style={s.card}><Text style={s.section}>MEDICINES ENTERED</Text>{list.length?list.map((m,i)=><Text key={i} style={s.med}>• {m}</Text>):<Text style={s.copy}>No medicine names were supplied. Return to patient details and add all prescribed and currently used medicines.</Text>}</View>
+  <View style={s.report}>
+   <Text style={s.reportTitle}>Drug–drug interaction check</Text>
+   <Text style={s.copy}>Every entered medicine pair is listed below. The current app has no validated clinical interaction database connected, so the result is marked UNKNOWN—not major, moderate, minor or safe. FDA label excerpts below are supporting product information, not a pairwise interaction verdict.</Text>
+   {!pairs.length?<Text style={s.copy}>Enter at least two medicines to create medicine pairs for review.</Text>:pairs.map((pair,i)=><View key={pair.first+'-'+pair.second} style={s.finding}>
+    <Text style={s.findingTitle}>{pair.first} + {pair.second}</Text>
+    <Text style={s.pairUnknown}>UNKNOWN — interaction severity not established</Text>
+    <Text style={s.copy}>Possible interaction: not assessed. No validated pairwise source is connected, so RxCheck cannot determine whether this combination causes a major, moderate or minor interaction.</Text>
+    <Text style={s.copy}>Recommended action: ask a pharmacist or prescribing clinician to check both medicines together, including their strengths, doses and timing.</Text>
+    <Text style={s.altTitle}>Alternative medicine</Text>
+    <Text style={s.copy}>No verified substitute can be recommended from the available FDA label data. A suitable alternative depends on the condition being treated, dose, allergies, pregnancy status, kidney/liver function and the rest of the medicine list.</Text>
+    <Text style={s.copy}>Ask the prescriber or pharmacist to select and verify any alternative. Do not stop or replace either medicine yourself.</Text>
+   </View>)}
+  </View>
   <View style={s.report}>
    <Text style={s.reportTitle}>Individual label findings</Text>
    {loading?<View style={s.row}><ActivityIndicator color="#0E6E63"/><Text style={s.copy}>Looking up official FDA product-label records…</Text></View>:null}
@@ -104,4 +122,4 @@ export default function Interactions(){
   <Text style={s.foot}>Source: openFDA Drug Label API. Source lookup is limited as described above. Unavailable sources are not treated as checked.</Text>
  </ScrollView>;
 }
-const s=StyleSheet.create({page:{padding:22,paddingTop:48,gap:13},back:{color:'#0E6E63',fontWeight:'700'},title:{fontSize:27,fontWeight:'800',color:'#172B28'},copy:{fontSize:13,color:'#63716B',lineHeight:20},med:{fontSize:15,fontWeight:'700',color:'#1D332F'},section:{fontSize:11,fontWeight:'800',letterSpacing:1.3,color:'#0E6E63',marginBottom:8},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#E0E7E1',borderRadius:10,padding:15,gap:7},report:{backgroundColor:'#FFF',borderRadius:10,padding:15,gap:12,borderWidth:1,borderColor:'#D9E5DF'},reportTitle:{fontSize:18,fontWeight:'800',color:'#1D332F'},row:{flexDirection:'row',gap:10,alignItems:'center'},finding:{borderTopWidth:1,borderTopColor:'#E7ECE8',paddingTop:10,gap:6},findingTitle:{fontSize:14,fontWeight:'800',color:'#0E6E63'},coverage:{backgroundColor:'#F0F5F1',padding:15,borderRadius:10,gap:7},warning:{backgroundColor:'#FFF4DE',padding:15,borderRadius:10,gap:6},warningTitle:{fontWeight:'800',color:'#754B12'},next:{backgroundColor:'#0E6E63',padding:16,borderRadius:10,alignItems:'center',marginTop:10},nextText:{color:'#FFF',fontWeight:'800'},foot:{fontSize:12,color:'#7B8781',lineHeight:18,marginTop:8}});
+const s=StyleSheet.create({page:{padding:22,paddingTop:48,gap:13},back:{color:'#0E6E63',fontWeight:'700'},title:{fontSize:27,fontWeight:'800',color:'#172B28'},copy:{fontSize:13,color:'#63716B',lineHeight:20},med:{fontSize:15,fontWeight:'700',color:'#1D332F'},section:{fontSize:11,fontWeight:'800',letterSpacing:1.3,color:'#0E6E63',marginBottom:8},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#E0E7E1',borderRadius:10,padding:15,gap:7},report:{backgroundColor:'#FFF',borderRadius:10,padding:15,gap:12,borderWidth:1,borderColor:'#D9E5DF'},reportTitle:{fontSize:18,fontWeight:'800',color:'#1D332F'},row:{flexDirection:'row',gap:10,alignItems:'center'},finding:{borderTopWidth:1,borderTopColor:'#E7ECE8',paddingTop:10,gap:6},findingTitle:{fontSize:14,fontWeight:'800',color:'#0E6E63'},pairUnknown:{fontSize:13,fontWeight:'800',color:'#8A5A13'},altTitle:{fontSize:14,fontWeight:'800',color:'#1D332F',marginTop:4},coverage:{backgroundColor:'#F0F5F1',padding:15,borderRadius:10,gap:7},warning:{backgroundColor:'#FFF4DE',padding:15,borderRadius:10,gap:6},warningTitle:{fontWeight:'800',color:'#754B12'},next:{backgroundColor:'#0E6E63',padding:16,borderRadius:10,alignItems:'center',marginTop:10},nextText:{color:'#FFF',fontWeight:'800'},foot:{fontSize:12,color:'#7B8781',lineHeight:18,marginTop:8}});
