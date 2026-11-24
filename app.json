@@ -3,7 +3,7 @@
     "name": "RxCheck",
     "slug": "rx-check",
     "scheme": "rxcheck",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -39,7 +39,7 @@
     ],
     "android": {
       "package": "com.rxcheck.app",
-      "versionCode": 6,
+      "versionCode": 7,
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES"
