@@ -78,9 +78,12 @@ jobs:
 
       - name: Build standalone release APK
         working-directory: android
+        env:
+          GRADLE_OPTS: -Xmx3g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8
         run: |
+          set -euo pipefail
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --stacktrace --max-workers=2
 
       - name: Upload RxCheck standalone APK
         uses: actions/upload-artifact@v5
