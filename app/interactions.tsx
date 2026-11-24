@@ -116,7 +116,7 @@ export default function Interactions(){
    <Text style={s.copy}>• Cyntegrity: no integration configured. Its visualizer is based on patterns in FDA adverse-event reports; those reports do not establish causation and are not a validated causal interaction checker.</Text>
   </View>
   <View style={s.warning}><Text style={s.warningTitle}>Clinical safety limitation</Text><Text style={s.copy}>This report does not claim that a medicine combination is safe. A no-match result is unknown, not evidence that the medicines are safe together. openFDA says its data must not be relied on for medical-care decisions. Drugs.com, Medscape, Cyntegrity and FDA FDALabel cannot be represented as checked because no supported, authorised connection is configured. Ask a pharmacist or prescriber to verify the complete regimen. Do not stop, change or substitute medicines based on this report.</Text></View>
-  <Pressable style={s.next} onPress={()=>router.push({pathname:'/safety',params:{meds:JSON.stringify(list),prescribed:JSON.stringify(prescribed)}})}><Text style={s.nextText}>Open Smart Safety Report →</Text></Pressable>
+  <Pressable style={s.next} onPress={()=>router.push({pathname:'/final-report',params:{meds:JSON.stringify(list),prescribed:JSON.stringify(prescribed)}})}><Text style={s.nextText}>Continue to Final Report →</Text></Pressable>
   {prescribed.length>0
     ?<Pressable style={s.next} onPress={()=>router.push({pathname:'/buy',params:{meds:JSON.stringify(prescribed)}})}><Text style={s.nextText}>Search prescribed medicines →</Text></Pressable>
     :<Text style={s.copy}>Medicine-store searches are available only for medicines entered under “Prescribed medicines.” Currently taken medicines are not sent to store search.</Text>}
