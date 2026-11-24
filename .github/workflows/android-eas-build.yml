@@ -1,5 +1,6 @@
 name: Android APK (GitHub Actions)
 
+# Keep all GitHub-maintained actions on Node 24-compatible major versions.
 on:
   push:
     branches: [main]
