@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
-import { Link, useLocalSearchParams } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Link, router, useLocalSearchParams } from 'expo-router';
+
 import { Brand } from '../components/Brand';
 
 type Pharmacy = {
@@ -46,15 +46,8 @@ export default function Buy() {
     }
   }, [p.meds]);
 
-  const openMedicinePage = async (url: string) => {
-    try {
-      await WebBrowser.openBrowserAsync(url, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        showTitle: true,
-      });
-    } catch {
-      Alert.alert('Unable to open pharmacy', 'Please check your internet connection and try again.');
-    }
+  const openMedicinePage = (url: string, title: string) => {
+    router.push({ pathname: '/pharmacy', params: { url, title } });
   };
 
   return (
@@ -76,7 +69,7 @@ export default function Buy() {
             <Pressable
               key={pharmacy.name}
               style={s.pharmacyButton}
-              onPress={() => openMedicinePage(pharmacy.url(medicine))}
+              onPress={() => openMedicinePage(pharmacy.url(medicine), pharmacy.name)}
               accessibilityRole="button"
               accessibilityLabel={'Search ' + medicine + ' on ' + pharmacy.name}
             >
@@ -90,7 +83,8 @@ export default function Buy() {
           <Pressable
             style={s.genericButton}
             onPress={() => openMedicinePage(
-              'https://www.1mg.com/search/all?name=' + encodeURIComponent(medicine + ' generic')
+              'https://www.1mg.com/search/all?name=' + encodeURIComponent(medicine + ' generic'),
+              'Tata 1mg · Generic medicines'
             )}
           >
             <Text style={s.genericButtonText}>Explore lower-cost generic listings ↗</Text>
@@ -117,7 +111,7 @@ export default function Buy() {
         </Text>
       </View>
       <Text style={s.disclaimer}>
-        Pharmacy buttons open search results, not guaranteed exact product-detail pages. RxCheck does not currently
+        Pharmacy buttons open search results inside RxCheck, not guaranteed exact product-detail pages. RxCheck does not currently
         have pharmacy APIs, verified product matching, live price comparison or stock feeds. Do not treat missing
         listings as proof that a medicine is unavailable.
       </Text>
