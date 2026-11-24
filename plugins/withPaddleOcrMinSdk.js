@@ -9,27 +9,9 @@ module.exports = function withPaddleOcrMinSdk(config) {
     }
     source = source.replace(target, 'minSdkVersion 26');
 
-    // ONNX Runtime and OpenCV include large native binaries. Keep only the
-    // ARM64 ABI in release builds; the production profile is an Android App Bundle.
+    // Keep only ARM64 native libraries and shrink the Android release build.
     if (!source.includes('abiFilters "arm64-v8a"')) {
-      source += \`
-
-// RxCheck release size optimization.
-android {
-  defaultConfig {
-    ndk {
-      abiFilters "arm64-v8a"
-    }
-  }
-  buildTypes {
-    release {
-      minifyEnabled true
-      shrinkResources true
-      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-    }
-  }
-}
-\`;
+      source += '\n\n// RxCheck release size optimization.\nandroid {\n  defaultConfig {\n    ndk {\n      abiFilters "arm64-v8a"\n    }\n  }\n  buildTypes {\n    release {\n      minifyEnabled true\n      shrinkResources true\n      proguardFiles getDefaultProguardFile(\'proguard-android-optimize.txt\'), \'proguard-rules.pro\'\n    }\n  }\n}\n';
     }
     config.modResults.contents = source;
     return config;
