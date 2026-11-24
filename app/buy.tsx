@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 
@@ -46,6 +46,8 @@ export default function Buy() {
     }
   }, [p.meds]);
 
+  const [verified,setVerified]=useState<Record<string,boolean[]>>({});
+  const checks=['Exact medicine name matches prescription','Active ingredient / salt confirmed','Strength and dosage form match','Release type and pack size checked','Seller, expiry and stock checked on pharmacy site'];
   const openMedicinePage = (url: string, title: string) => {
     router.push({ pathname: '/pharmacy', params: { url, title } });
   };
@@ -80,6 +82,17 @@ export default function Buy() {
               <Text style={s.arrow}>↗</Text>
             </Pressable>
           ))}
+          <View style={s.verifyCard}>
+            <Text style={s.sectionTitle}>Product verification checklist</Text>
+            <Text style={s.smallNote}>Tick each item only after checking the pharmacy listing or asking a pharmacist. These are user confirmations, not automatic RxCheck verification.</Text>
+            {checks.map((label,index)=>{
+              const done=Boolean(verified[medicine]?.[index]);
+              return <Pressable key={medicine+'-'+index} style={s.checkRow} onPress={()=>setVerified(old=>({...old,[medicine]:checks.map((_,i)=>i===index?!Boolean(old[medicine]?.[i]):Boolean(old[medicine]?.[i]))}))}>
+                <Text style={s.checkMark}>{done?'☑':'☐'}</Text><Text style={s.checkText}>{label}</Text>
+              </Pressable>;
+            })}
+            <Text style={s.smallNote}>{(verified[medicine]||[]).filter(Boolean).length} of {checks.length} checks marked by you.</Text>
+          </View>
           <Pressable
             style={s.genericButton}
             onPress={() => openMedicinePage(
@@ -133,6 +146,8 @@ const s = StyleSheet.create({
   pharmacyName: { color: '#0E6E63', fontWeight: '800', fontSize: 15 },
   pharmacyNote: { color: '#718079', fontSize: 11 },
   arrow: { color: '#0E6E63', fontSize: 20, fontWeight: '800', paddingLeft: 8 },
+  verifyCard:{backgroundColor:'#F7FAF8',borderWidth:1,borderColor:'#DCE7E1',borderRadius:10,padding:12,gap:8},
+  checkRow:{flexDirection:'row',alignItems:'center',gap:9,paddingVertical:5},checkMark:{fontSize:19,color:'#0E6E63'},checkText:{fontSize:12,color:'#40534C',flex:1},
   genericButton: { backgroundColor: '#EAF5F1', borderRadius: 10, padding: 14, alignItems: 'center', marginTop: 3 },
   genericButtonText: { color: '#0E6E63', fontWeight: '800' },
   smallNote: { color: '#63716B', fontSize: 11, lineHeight: 17 },
