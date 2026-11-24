@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
 
@@ -99,6 +99,13 @@ export default function Interactions(){
    {!loading&&!list.length?<Text style={s.copy}>No lookup was made because no medicine names were entered.</Text>:null}
    {!loading&&list.length>0?<Text style={s.copy}>Consolidated findings: {matched.length} matching individual label record(s); {notFoundCount} name(s) with no matching FDA label record (unknown result); {unavailableCount} unavailable lookup(s); {Math.max(0,list.length-8)} name(s) not queried because of the 8-name limit. These counts do not establish that a medicine combination is safe.</Text>:null}
    {!loading&&notFoundCount>0?<Text style={s.copy}>{notFoundCount} medicine name(s) had no matching FDA label record. This is an unknown result, not evidence that the medicine or combination is safe.</Text>:null}
+   {!loading&&list.length>0?<View style={s.quickSummary}>
+    <Text style={s.findingTitle}>Quick medicine report</Text>
+    <Text style={s.copy}>{matched.length} FDA label match(es) · {notFoundCount} unknown name(s) · {unavailableCount} unavailable lookup(s) · {Math.max(0,list.length-8)} not queried.</Text>
+    <Text style={s.copy}>A missing FDA label is an unknown result, not evidence of safety. Individual labels do not establish whether medicines interact.</Text>
+    <Pressable style={s.next} onPress={()=>Linking.openURL('https://www.drugs.com/drug_interactions.html')}><Text style={s.nextText}>Check interactions ↗</Text></Pressable>
+    <Text style={s.copy}>Opens the external Drugs.com interaction checker. Enter the complete medicine list there and review its result with a pharmacist or prescriber; RxCheck does not import or verify that result.</Text>
+   </View>:null}
    {!loading&&unavailableCount>0?<Text style={s.copy}>FDA lookup could not be completed for {unavailableCount} medicine name(s), for example because the service was unavailable or rate-limited. Those names were not checked; retry later.</Text>:null}
    {!loading&&matched.map((item,i)=><View key={i} style={s.finding}>
     <Text style={s.findingTitle}>{item.medicine} — FDA label matched</Text>
@@ -123,4 +130,4 @@ export default function Interactions(){
   <Text style={s.foot}>Source: openFDA Drug Label API. Source lookup is limited as described above. Unavailable sources are not treated as checked.</Text>
  </ScrollView>;
 }
-const s=StyleSheet.create({page:{padding:22,paddingTop:48,gap:13},back:{color:'#0E6E63',fontWeight:'700'},title:{fontSize:27,fontWeight:'800',color:'#172B28'},copy:{fontSize:13,color:'#63716B',lineHeight:20},med:{fontSize:15,fontWeight:'700',color:'#1D332F'},section:{fontSize:11,fontWeight:'800',letterSpacing:1.3,color:'#0E6E63',marginBottom:8},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#E0E7E1',borderRadius:10,padding:15,gap:7},report:{backgroundColor:'#FFF',borderRadius:10,padding:15,gap:12,borderWidth:1,borderColor:'#D9E5DF'},reportTitle:{fontSize:18,fontWeight:'800',color:'#1D332F'},row:{flexDirection:'row',gap:10,alignItems:'center'},finding:{borderTopWidth:1,borderTopColor:'#E7ECE8',paddingTop:10,gap:6},findingTitle:{fontSize:14,fontWeight:'800',color:'#0E6E63'},pairUnknown:{fontSize:13,fontWeight:'800',color:'#8A5A13'},altTitle:{fontSize:14,fontWeight:'800',color:'#1D332F',marginTop:4},coverage:{backgroundColor:'#F0F5F1',padding:15,borderRadius:10,gap:7},warning:{backgroundColor:'#FFF4DE',padding:15,borderRadius:10,gap:6},warningTitle:{fontWeight:'800',color:'#754B12'},next:{backgroundColor:'#0E6E63',padding:16,borderRadius:10,alignItems:'center',marginTop:10},nextText:{color:'#FFF',fontWeight:'800'},foot:{fontSize:12,color:'#7B8781',lineHeight:18,marginTop:8}});
+const s=StyleSheet.create({page:{padding:22,paddingTop:48,gap:13},back:{color:'#0E6E63',fontWeight:'700'},title:{fontSize:27,fontWeight:'800',color:'#172B28'},copy:{fontSize:13,color:'#63716B',lineHeight:20},med:{fontSize:15,fontWeight:'700',color:'#1D332F'},section:{fontSize:11,fontWeight:'800',letterSpacing:1.3,color:'#0E6E63',marginBottom:8},card:{backgroundColor:'#FFF',borderWidth:1,borderColor:'#E0E7E1',borderRadius:10,padding:15,gap:7},report:{backgroundColor:'#FFF',borderRadius:10,padding:15,gap:12,borderWidth:1,borderColor:'#D9E5DF'},reportTitle:{fontSize:18,fontWeight:'800',color:'#1D332F'},row:{flexDirection:'row',gap:10,alignItems:'center'},finding:{borderTopWidth:1,borderTopColor:'#E7ECE8',paddingTop:10,gap:6},quickSummary:{backgroundColor:'#F2F7F3',padding:12,borderRadius:9,gap:7},findingTitle:{fontSize:14,fontWeight:'800',color:'#0E6E63'},pairUnknown:{fontSize:13,fontWeight:'800',color:'#8A5A13'},altTitle:{fontSize:14,fontWeight:'800',color:'#1D332F',marginTop:4},coverage:{backgroundColor:'#F0F5F1',padding:15,borderRadius:10,gap:7},warning:{backgroundColor:'#FFF4DE',padding:15,borderRadius:10,gap:6},warningTitle:{fontWeight:'800',color:'#754B12'},next:{backgroundColor:'#0E6E63',padding:16,borderRadius:10,alignItems:'center',marginTop:10},nextText:{color:'#FFF',fontWeight:'800'},foot:{fontSize:12,color:'#7B8781',lineHeight:18,marginTop:8}});
