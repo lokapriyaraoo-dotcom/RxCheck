@@ -25,7 +25,13 @@ export const INTERACTION_DATABASE_UPDATED = '2026-11-25';
 export const INTERACTION_DATABASE_SOURCE_POLICY =
   'No clinical interaction is classified unless its source and pharmacist review are recorded.';
 
-export const medicineIngredientAliases: Record<string, string> = {};
+// Exact generic-name self-mappings only. Brand aliases are deliberately absent
+// until checked against a reliable Indian product/ingredient source.
+export const medicineIngredientAliases: Record<string, string> = {
+  metformin: 'metformin',
+  azithromycin: 'azithromycin',
+  diclofenac: 'diclofenac',
+};
 
 export const interactionRecords: InteractionRecord[] = [];
 
