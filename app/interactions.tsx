@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
+import { checkInteractions } from '../services/interactions';
+import type { Medicine } from '../services/types';
 
 type LabelEvidence = {
   medicine:string;
@@ -82,7 +84,7 @@ export default function Interactions(){
   <Text style={s.copy}>This screen is an FDA medicine-label lookup, not a validated drug-interaction checker. It retrieves individual product-label information for the entered medicines. Pairwise interaction status below is NOT CHECKED because no validated clinical interaction source is connected; label text alone cannot establish whether two medicines interact. When you use this lookup, medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
   <View style={s.card}><Text style={s.section}>MEDICINES ENTERED</Text>{list.length?list.map((m,i)=><Text key={i} style={s.med}>• {m}</Text>):<Text style={s.copy}>No medicine names were supplied. Return to patient details and add all prescribed and currently used medicines.</Text>}</View>
   <View style={s.report}>
-   <Text style={s.reportTitle}>Interaction status — not checked by RxCheck</Text>
+   <Text style={s.reportTitle}>Local interaction database assessment</Text>
    <Text style={s.copy}>The pairs below are listed only to show which combinations still need a pharmacist or clinician review. RxCheck does not check or classify these interactions. No validated clinical interaction database is connected, so each pair is NOT CHECKED / UNKNOWN—not major, moderate, minor or safe. FDA label excerpts below are individual product information, not a pairwise interaction verdict.</Text>
    {!pairs.length?<Text style={s.copy}>Enter at least two medicines to create medicine pairs for review.</Text>:pairs.map((pair,i)=><View key={pair.first+'-'+pair.second} style={s.finding}>
     <Text style={s.findingTitle}>{pair.first} + {pair.second}</Text>
