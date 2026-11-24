@@ -29,7 +29,7 @@ export default function FinalReport() {
 
   async function makePdf() {
     setBusy(true);
-    try { await exportFinalReport({ patientName, age, diagnosis, allergies, medicines, prescribed, substitutionNotes }); }
+    try { await exportFinalReport({ patientName, age, diagnosis, allergies, medicines, prescribed, substitutionNotes, interactionFindings }); }
     catch { Alert.alert('PDF export unavailable', 'RxCheck could not create the PDF. Please try again.'); }
     finally { setBusy(false); }
   }
