@@ -1,19 +1,31 @@
 name: CI
+
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: rxcheck-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - run: npm install --no-audit --no-fund
+          cache: npm
+      - run: npm ci --no-audit --no-fund
       - name: Run Expo Doctor
         run: npx --yes expo-doctor
-      - run: npm test
-      - run: npm run typecheck
+      - name: Run unit tests
+        run: npm test
+      - name: Run TypeScript checks
+        run: npm run typecheck
