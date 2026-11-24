@@ -5,12 +5,12 @@ import { Brand } from '../components/Brand';
 
 const teal = '#117568';
 const ECG_BEAT_WIDTH = 180;
-const ECG_TRACE_WIDTH = ECG_BEAT_WIDTH * 3;
 const ECG_HEIGHT = 84;
+const ECG_SCALE = 0.8;
 const ECG_TEMPLATE = [
-  {x:0,y:42},{x:15,y:42},{x:22,y:38},{x:30,y:42},{x:50,y:42},
-  {x:62,y:52},{x:70,y:9},{x:78,y:73},{x:88,y:42},{x:118,y:42},
-  {x:136,y:34},{x:150,y:42},{x:180,y:42},
+  {x:0,y:42},{x:12,y:42},{x:19,y:38},{x:27,y:42},{x:43,y:42},
+  {x:49,y:47},{x:55,y:9},{x:62,y:72},{x:69,y:42},{x:96,y:42},
+  {x:108,y:35},{x:119,y:31},{x:131,y:34},{x:143,y:42},{x:180,y:42},
 ];
 function ecgY(x:number) {
   const beatX=x%ECG_BEAT_WIDTH;
@@ -23,12 +23,6 @@ function ecgY(x:number) {
   }
   return 42;
 }
-const ECG_POINTS=Array.from({length:ECG_TRACE_WIDTH/5+1},(_,i)=>({x:i*5,y:ecgY(i*5)}));
-const ECG_SEGMENTS=ECG_POINTS.slice(0,-1).map((a,i)=>{
-  const b=ECG_POINTS[i+1],dx=b.x-a.x,dy=b.y-a.y;
-  return {key:i,left:a.x,top:(a.y+b.y)/2,width:Math.hypot(dx,dy),angle:Math.atan2(dy,dx)};
-});
-
 function PaperBanner() {
   return <View style={s.banner}>
     <View style={s.paper}>
@@ -47,26 +41,51 @@ function EcgMonitor() {
   const progress=useRef(new Animated.Value(0)).current;
   const [width,setWidth]=useState(0);
   useEffect(()=>{
-    const animation=Animated.loop(Animated.timing(progress,{toValue:1,duration:2600,easing:Easing.linear,useNativeDriver:false}));
+    const animation=Animated.loop(Animated.timing(progress,{
+      toValue:1,
+      duration:1800,
+      easing:Easing.linear,
+      useNativeDriver:true,
+    }));
     animation.start();
     return ()=>animation.stop();
   },[progress]);
-  const revealWidth=progress.interpolate({inputRange:[0,1],outputRange:[0,width]});
-  const cursorX=progress.interpolate({inputRange:[0,1],outputRange:[0,width]});
-  const scale=width/ECG_TRACE_WIDTH;
-  const segments=useMemo(()=>ECG_SEGMENTS.map(segment=>({...segment,left:segment.left*scale,top:segment.top*scale,width:segment.width*scale})),[scale]);
+
+  const beatPixels=ECG_BEAT_WIDTH*ECG_SCALE;
+  const traceWidth=width/ECG_SCALE+ECG_BEAT_WIDTH;
+  const segments=useMemo(()=>{
+    if(width<=0)return [];
+    const points=Array.from({length:Math.ceil(traceWidth/3)+1},(_,i)=>{
+      const x=i*3;
+      return {x:x*ECG_SCALE,y:ecgY(x)};
+    });
+    return points.slice(0,-1).map((a,i)=>{
+      const b=points[i+1],dx=b.x-a.x,dy=b.y-a.y;
+      return {
+        key:i,
+        left:a.x,
+        top:(a.y+b.y)/2,
+        width:Math.hypot(dx,dy),
+        angle:Math.atan2(dy,dx),
+      };
+    });
+  },[traceWidth,width]);
+
+  const scrollX=progress.interpolate({
+    inputRange:[0,1],
+    outputRange:[0,-beatPixels],
+  });
+
   return <View style={s.ecgCard}>
     <View style={s.ecgViewport} onLayout={event=>setWidth(event.nativeEvent.layout.width)}>
       <View style={s.ecgGrid}>
         {Array.from({length:19},(_,i)=><View key={'v'+i} style={[s.ecgVertical,{left:i*17}]}/>)}
         {Array.from({length:6},(_,i)=><View key={'h'+i} style={[s.ecgHorizontal,{top:i*14}]}/>)}
       </View>
-      {width>0?<Animated.View style={[s.ecgReveal,{width:revealWidth}]}>
-        <View style={{width,height:ECG_HEIGHT}}>
-          {segments.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2.5,borderRadius:2,backgroundColor:'#16796C',transform:[{rotate:segment.angle+'rad'}]}}/>)}
-        </View>
+      {width>0?<Animated.View style={[s.ecgTrace,{width:width+beatPixels,transform:[{translateX:scrollX}]}]}>
+        {segments.map(segment=><View key={segment.key} style={{position:'absolute',left:segment.left,top:segment.top,width:segment.width,height:2.5,borderRadius:2,backgroundColor:'#16796C',transform:[{rotate:segment.angle+'rad'}]}}/>)}
       </Animated.View>:null}
-      <Animated.View style={[s.ecgCursor,{transform:[{translateX:cursorX}]}]}/>
+      <View pointerEvents="none" style={s.ecgCursor}/>
     </View>
   </View>;
 }
@@ -128,8 +147,8 @@ const s = StyleSheet.create({
   ecgGrid:{...StyleSheet.absoluteFillObject},
   ecgVertical:{position:'absolute',top:0,bottom:0,width:1,backgroundColor:'#E8D8CF'},
   ecgHorizontal:{position:'absolute',left:0,right:0,height:1,backgroundColor:'#E8D8CF'},
-  ecgReveal:{position:'absolute',left:0,top:0,bottom:0,overflow:'hidden'},
-  ecgCursor:{position:'absolute',left:0,top:0,bottom:0,width:3,backgroundColor:'#78A99D',opacity:.95},
+  ecgTrace:{position:'absolute',left:0,top:0,bottom:0,overflow:'hidden'},
+  ecgCursor:{position:'absolute',right:0,top:0,bottom:0,width:2,backgroundColor:'#78A99D',opacity:.75},
   action:{backgroundColor:'#FCFDFC',borderRadius:15,padding:19,borderWidth:1,borderColor:'#DDE5DF',minHeight:142,justifyContent:'center',shadowColor:'#183B32',shadowOpacity:.035,shadowRadius:7,elevation:1},
   actionIcon:{fontSize:24,color:teal,fontWeight:'700',marginBottom:12},
   actionTitle:{fontSize:18,fontWeight:'800',color:'#1C302B',marginBottom:7},
