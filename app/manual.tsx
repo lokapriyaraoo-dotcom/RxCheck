@@ -6,17 +6,18 @@ import { Brand } from '../components/Brand';
 import { emptyPatient, type Medicine, type Patient } from '../services/types';
 import { extractPatientDetails, extractMedicineCandidates, readPrescriptionImage, validateImageBytes } from '../services/ocr';
 import { readHandwrittenPrescriptionImage } from '../services/handwritingOcr';
+import { getReview, saveReview } from '../services/localHistory';
 
 const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')=><View style={{gap:5}}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChange} placeholder={placeholder} style={s.input}/></View>;
-function localMedicines(text:string,prefix='ocr'):Medicine[]{
+function localMedicines(text:string,prefix='ocr',confidence?:number):Medicine[]{
   return extractMedicineCandidates(text).map((m,i)=>({
     id:prefix+'-'+i,name:m.name||'',strength:m.strength||'',dose:m.dose||'',
-    unit:'unknown' as const,frequency:m.frequency||'',duration:m.duration||'',instructions:m.instructions||'',needsReview:true
+    unit:'unknown' as const,frequency:m.frequency||'',duration:m.duration||'',instructions:m.instructions||'',...(typeof confidence==='number'?{confidence}:{}),needsReview:true
   }));
 }
 export default function Manual(){
   const router=useRouter();
-  const params=useLocalSearchParams<{ocrText?:string}>();
+  const params=useLocalSearchParams<{ocrText?:string;resumeId?:string}>();
   const initialText=typeof params.ocrText==='string'?params.ocrText:'';
   const [ocrText,setOcrText]=useState(initialText);
   const [patient,setPatient]=useState<Patient>(()=>({...emptyPatient,...extractPatientDetails(initialText)}));
@@ -24,6 +25,40 @@ export default function Manual(){
   const [draft,setDraft]=useState({name:'',strength:'',dose:'',unit:'unknown' as Medicine['unit'],frequency:'',duration:'',instructions:''});
   const [busy,setBusy]=useState(false);
   const [currentMedsText,setCurrentMedsText]=useState('');
+  const [reviewId,setReviewId]=useState(()=>typeof params.resumeId==='string'?params.resumeId:String(Date.now()));
+  const [historyReady,setHistoryReady]=useState(typeof params.resumeId!=='string');
+
+
+  useEffect(()=>{
+    if(typeof params.resumeId!=='string')return;
+    let live=true;
+    getReview(params.resumeId).then(saved=>{
+      if(!live)return;
+      if(!saved){setHistoryReady(true);return;}
+      setReviewId(saved.id);
+      setPatient({...emptyPatient,...(saved.patient as Partial<Patient>)});
+      setMeds(Array.isArray(saved.medicines)?saved.medicines as Medicine[]:[]);
+      setCurrentMedsText(saved.currentMedsText||'');
+      setHistoryReady(true);
+    }).catch(()=>{setHistoryReady(true);Alert.alert('Could not resume review','Encrypted history could not be opened on this device.');});
+    return()=>{live=false;};
+  },[params.resumeId]);
+
+  useEffect(()=>{
+    if(!historyReady)return;
+    const timer=setTimeout(()=>{
+      saveReview({
+        id:reviewId,
+        title:patient.name.trim()||meds.map(m=>m.name).filter(Boolean).slice(0,2).join(', ')||'Untitled prescription review',
+        createdAt:new Date().toISOString(),
+        patient:patient as unknown as Record<string,unknown>,
+        medicines:meds,
+        currentMedsText,
+        status:'Draft'
+      }).catch(()=>{});
+    },900);
+    return()=>clearTimeout(timer);
+  },[reviewId,patient,meds,currentMedsText]);
 
   useEffect(()=>{
     if(typeof params.ocrText!=='string'||!params.ocrText.trim())return;
@@ -53,6 +88,7 @@ export default function Manual(){
     try{
       let printedText='';
       let handwritingText='';
+      let handwritingConfidence:number|undefined;
       const failures:string[]=[];
       try{
         const read=await readPrescriptionImage(asset.uri);
@@ -65,6 +101,10 @@ export default function Manual(){
       try{
         const handwritten=await readHandwrittenPrescriptionImage(asset.uri);
         handwritingText=handwritten.text;
+        if(handwritten.confidences.length){
+          const raw=handwritten.confidences.reduce((sum,value)=>sum+value,0)/handwritten.confidences.length;
+          handwritingConfidence=raw>1?raw/100:raw;
+        }
       }catch(error){
         failures.push(error instanceof Error?error.message:'Experimental handwriting OCR was unavailable.');
       }
@@ -76,7 +116,7 @@ export default function Manual(){
       setOcrText(text);
       const extractedPatient=extractPatientDetails(text);
       setPatient(old=>({...old,...Object.fromEntries(Object.entries(extractedPatient).filter(([,value])=>Boolean(value)))}));
-      const candidates=localMedicines(text,'attached');
+      const candidates=localMedicines(text,'attached',handwritingConfidence);
       if(candidates.length)setMeds(candidates);
       Alert.alert(
         'Prescription text read',
@@ -101,7 +141,7 @@ export default function Manual(){
     const taking=currentMedsText.split(/[\r\n,;]+/).map(x=>x.trim()).filter(Boolean);
     const all=[...new Set([...prescribed,...taking])];
     if(!all.length){Alert.alert('Add medicines','Enter prescribed medicines and any other medicines currently being taken.');return;}
-    router.push({pathname:'/interactions',params:{meds:JSON.stringify(all),prescribed:JSON.stringify(prescribed),taking:JSON.stringify(taking)}});
+    router.push({pathname:'/workspace',params:{meds:JSON.stringify(all),prescribed:JSON.stringify(prescribed),taking:JSON.stringify(taking)}});
   }
   const patientCount=[patient.name,patient.age,patient.gender,patient.weightKg,patient.allergies].filter(Boolean).length;
   return <ScrollView contentContainerStyle={s.page}>
@@ -142,7 +182,7 @@ export default function Manual(){
       {input('Frequency',m.frequency,v=>updateMedicine(m.id,'frequency',v))}
       {input('Duration',m.duration,v=>updateMedicine(m.id,'duration',v))}
       {input('Route / instructions',m.instructions,v=>updateMedicine(m.id,'instructions',v))}
-      <Text style={s.flag}>OCR extracted — verify with original prescription{typeof m.confidence==='number'?' · confidence '+Math.round(m.confidence*100)+'%':''}</Text>
+      <Text style={[s.flag,typeof m.confidence!=='number'?s.confidenceMedium:m.confidence>=0.85?s.confidenceHigh:m.confidence<0.6?s.confidenceLow:s.confidenceMedium]}>{typeof m.confidence!=='number'?'AMBER · confidence unavailable — manual verification required':m.confidence>=0.85?'GREEN · higher OCR confidence':m.confidence<0.6?'RED · low OCR confidence':'AMBER · medium OCR confidence'}{typeof m.confidence==='number'?' · '+Math.round(m.confidence*100)+'%':''} · verify against original</Text>
     </View>)}
     <Text style={s.section}>OTHER MEDICINES CURRENTLY TAKEN</Text>
     <Text style={s.caption}>Include regular medicines, OTC painkillers, vitamins and supplements. Separate names with commas or new lines.</Text>
@@ -165,7 +205,8 @@ const s=StyleSheet.create({
   detectedValue:{fontSize:13,fontWeight:'800',color:'#203A34'},
   med:{padding:14,backgroundColor:'#FFF',borderRadius:9,gap:4},
   medTitle:{fontWeight:'800',fontSize:16,color:'#1D332F'},
-  flag:{fontSize:12,color:'#9A5E12',fontWeight:'700'},
+  flag:{fontSize:12,fontWeight:'800'},
+  confidenceHigh:{color:'#147A43'},confidenceMedium:{color:'#9A650D'},confidenceLow:{color:'#B42318'},
   button:{backgroundColor:'#0E6E63',padding:16,borderRadius:9,alignItems:'center',marginTop:8},
   buttonText:{color:'#FFF',fontWeight:'800'},
   foot:{fontSize:12,color:'#829089',lineHeight:18}
