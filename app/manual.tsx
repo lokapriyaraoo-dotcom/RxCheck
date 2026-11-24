@@ -26,22 +26,26 @@ export default function Manual(){
   const [busy,setBusy]=useState(false);
   const [currentMedsText,setCurrentMedsText]=useState('');
   const [reviewId,setReviewId]=useState(()=>typeof params.resumeId==='string'?params.resumeId:String(Date.now()));
+  const [historyReady,setHistoryReady]=useState(typeof params.resumeId!=='string');
 
 
   useEffect(()=>{
     if(typeof params.resumeId!=='string')return;
     let live=true;
     getReview(params.resumeId).then(saved=>{
-      if(!live||!saved)return;
+      if(!live)return;
+      if(!saved){setHistoryReady(true);return;}
       setReviewId(saved.id);
       setPatient({...emptyPatient,...(saved.patient as Partial<Patient>)});
       setMeds(Array.isArray(saved.medicines)?saved.medicines as Medicine[]:[]);
       setCurrentMedsText(saved.currentMedsText||'');
-    }).catch(()=>Alert.alert('Could not resume review','Encrypted history could not be opened on this device.'));
+      setHistoryReady(true);
+    }).catch(()=>{setHistoryReady(true);Alert.alert('Could not resume review','Encrypted history could not be opened on this device.');});
     return()=>{live=false;};
   },[params.resumeId]);
 
   useEffect(()=>{
+    if(!historyReady)return;
     const timer=setTimeout(()=>{
       saveReview({
         id:reviewId,
