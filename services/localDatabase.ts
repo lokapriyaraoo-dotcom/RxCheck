@@ -50,6 +50,11 @@ export async function getLocalDatabase() {
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS fda_label_cache (
+      medicine_key TEXT PRIMARY KEY NOT NULL,
+      payload TEXT NOT NULL,
+      cached_at TEXT NOT NULL
+    );
   `);
   for (const item of STARTER_CATALOG) {
     await database.runAsync(
