@@ -1,7 +1,14 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useColorScheme } from 'react-native';
 
 export default function RootLayout() {
-  return <SafeAreaProvider><StatusBar style="dark" /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F4F6F2' } }} /></SafeAreaProvider>;
+  const dark = useColorScheme() === 'dark';
+  return <SafeAreaProvider>
+    <StatusBar style="auto" />
+    <SafeAreaView style={{flex:1,backgroundColor:dark?'#101B19':'#F4F7F3'}} edges={['top','bottom']}>
+      <Stack screenOptions={{ headerShown:false, contentStyle:{backgroundColor:dark?'#101B19':'#F4F7F3'} }} />
+    </SafeAreaView>
+  </SafeAreaProvider>;
 }
