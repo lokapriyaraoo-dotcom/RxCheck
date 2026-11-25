@@ -54,8 +54,7 @@ export default function Workspace(){
     {finding.source?<Text style={s.source}>Source: {finding.source}</Text>:null}
    </View>)}
    <Text style={s.disclaimer}>Unknown or unassessed does not mean safe. The bundled database currently has no pharmacist-reviewed pair records; therefore an unknown result cannot be cleared by this app.</Text>
-   <Pressable style={s.button} onPress={()=>router.push({pathname:'/interactions',params})}><Text style={s.buttonText}>Open detailed interaction and FDA label review →</Text></Pressable>
-   <Pressable style={s.secondaryButton} onPress={()=>router.push({pathname:'/final-report',params:{meds:JSON.stringify(meds),prescribed:JSON.stringify(prescribed),findings:JSON.stringify(findings),foodStatus:workflow.foodInteractionStatus}})}><Text style={s.secondaryText}>Prepare final report / PDF →</Text></Pressable>
+   <Pressable style={s.button} onPress={()=>router.push({pathname:'/interactions',params})}><Text style={s.buttonText}>Generate Final Drug Safety Report →</Text></Pressable>
   </View>
   <View style={s.notice}><Text style={s.noticeTitle}>Important safety note</Text><Text style={s.copy}>This is an automated information aid, not clinical clearance. FDA individual medicine labels are shown separately and do not, by themselves, establish a drug–drug interaction. Ask a pharmacist or prescriber to review the complete regimen. Do not stop or change medicines based on this result.</Text></View>
  </ScrollView>;
@@ -69,6 +68,6 @@ const s=StyleSheet.create({
  outcomeTitle:{fontSize:19,fontWeight:'900'},counts:{flexDirection:'row',flexWrap:'wrap',gap:8},count:{fontSize:11,fontWeight:'800',color:'#344640',backgroundColor:'#EDF1EE',padding:8,borderRadius:7,overflow:'hidden'},
  finding:{borderTopWidth:1,borderTopColor:'#E6ECE7',paddingTop:10,gap:5},findingTitle:{fontSize:14,fontWeight:'800',color:'#1D332F'},severity:{fontSize:11,fontWeight:'900',letterSpacing:.7},source:{fontSize:11,color:'#77837D'},disclaimer:{fontSize:12,lineHeight:18,color:'#754B12',backgroundColor:'#FFF2DC',padding:10,borderRadius:8},
  button:{backgroundColor:'#0E6E63',padding:14,borderRadius:9,alignItems:'center'},buttonText:{color:'#FFF',fontWeight:'900',textAlign:'center'},
- secondaryButton:{borderWidth:1,borderColor:'#0E6E63',padding:13,borderRadius:9,alignItems:'center'},secondaryText:{color:'#0E6E63',fontWeight:'900'},
+ 
  notice:{backgroundColor:'#FCE8E6',padding:14,borderRadius:11,gap:6},noticeTitle:{fontSize:14,fontWeight:'900',color:'#A12622'}
 });
