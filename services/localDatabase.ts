@@ -97,3 +97,15 @@ export async function suggestMedicineNameCorrection(rawName: string): Promise<st
   if (!match) return null;
   return rows.find(row => row.name.toLowerCase() === match.toLowerCase())?.name || match;
 }
+
+export async function getCachedFdaLabel<T>(medicine: string, maxAgeMs = 7 * 24 * 60 * 60 * 1000): Promise<T | null> {
+  const db = await getLocalDatabase();
+  const key = normalize(medicine);
+  const row = await db.getFirstAsync<{payload:string;cached_at:string}>('SELECT payload,cached_at FROM fda_label_cache WHERE medicine_key=?', key);
+  if (!row || Date.now() - new Date(row.cached_at).getTime() > maxAgeMs) return null;
+  try { return JSON.parse(row.payload) as T; } catch { return null; }
+}
+export async function saveCachedFdaLabel(medicine: string, payload: unknown): Promise<void> {
+  const db = await getLocalDatabase();
+  await db.runAsync('INSERT OR REPLACE INTO fda_label_cache (medicine_key,payload,cached_at) VALUES (?,?,?)', normalize(medicine), JSON.stringify(payload), new Date().toISOString());
+}
