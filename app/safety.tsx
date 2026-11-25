@@ -23,6 +23,7 @@ export default function SafetyReport(){
  const duplicates=useMemo(()=>{const seen=new Map<string,string[]>();ingredientChecks.forEach(row=>{if(row.ingredient)seen.set(row.ingredient,[...(seen.get(row.ingredient)||[]),row.medicine])});return [...seen.entries()].filter(([,names])=>names.length>1)},[ingredientChecks]);
  const allergyMatches=useMemo(()=>{const tokens=allergies.toLowerCase().split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);return ingredientChecks.filter(row=>row.ingredient&&tokens.some(token=>token===row.ingredient||row.ingredient!.includes(token)||token.includes(row.ingredient!)))},[allergies,ingredientChecks]);
  const unknownIngredients=ingredientChecks.filter(row=>!row.ingredient);
+ const missingPatientFacts=[!allergies.trim(),pregnancy.toLowerCase().includes('unknown'),kidney.toLowerCase().includes('unknown'),liver.toLowerCase().includes('unknown'),!food.trim()].filter(Boolean).length;
  async function shareChecklist(){
    setChecklistBusy(true);
    try{
@@ -52,13 +53,14 @@ export default function SafetyReport(){
   </View>
   <Text style={s.heading}>SAFETY CHECKS</Text>
   <Row title="Duplicate active ingredients (local catalogue)" status={duplicates.length?'POSSIBLE DUPLICATE SALT':unknownIngredients.length?'PARTIAL / UNKNOWN':'NOT CONFIRMED'} detail={duplicates.length?duplicates.map(([ingredient,names])=>ingredient+': '+names.join(' / ')).join('; ')+' — verify formulation and strength with a pharmacist.':'No duplicate ingredient was identified in the limited local catalogue. This is not proof that duplicate therapy is absent.'}/>
-  <Row title="Ingredient-level allergy matching" status={allergyMatches.length?'POSSIBLE ALLERGY MATCH':allergies?'NO MATCH / LIMITED DATA':'UNKNOWN'} detail={allergyMatches.length?allergyMatches.map(row=>row.medicine+' maps to '+row.ingredient).join('; '):allergies?'No exact ingredient match in the limited local catalogue. Brand names, excipients and unmapped products are not covered.':'Allergy information not provided.'}/>
+  {allergies.trim()?<Row title="Ingredient-level allergy matching" status={allergyMatches.length?'POSSIBLE ALLERGY MATCH':'NO MATCH / LIMITED DATA'} detail={allergyMatches.length?allergyMatches.map(row=>row.medicine+' maps to '+row.ingredient).join('; '):'No exact ingredient match in the limited local catalogue. Brand names, excipients and unmapped products are not covered.'}/>:null}
   {unknownIngredients.length?<Text style={s.detail}>Unmapped medicine names (ingredient unknown): {unknownIngredients.map(x=>x.medicine).join(', ')}. This does not mean no allergy or no duplicate ingredient.</Text>:null}
-  <Row title="Dose & dosage safety" status="NOT ASSESSED" detail="Dose, frequency, duration, age, weight and kidney/liver function need pharmacist verification. No dose calculator is connected."/>
-  <Row title="Food & medicine interactions" status="NOT ASSESSED" detail={food?'Food/drink information recorded for clinician review; no interaction database is connected.':'Food, drink and supplement details not provided. Add them above for clinician review.'}/>
-  <Row title="Pregnancy & breastfeeding" status="REVIEW REQUIRED" detail={pregnancy+' — medicine-specific risk assessment is not connected.'}/>
-  <Row title="Kidney safety" status="REVIEW REQUIRED" detail={kidney+' — renal dose adjustment and contraindications are not assessed.'}/>
-  <Row title="Liver safety" status="REVIEW REQUIRED" detail={liver+' — hepatic precautions and dose adjustment are not assessed.'}/>
+  <Row title="Dose & dosage safety" status="REVIEW" detail="Dose, frequency, duration, age, weight and kidney/liver function need pharmacist verification. No dose calculator is connected."/>
+  {missingPatientFacts>0?<Row title="Patient details needed" status="UNKNOWN" detail={missingPatientFacts+' checks need patient details (allergies, pregnancy/breastfeeding, kidney, liver or food/supplement information). Add the missing details above; these unknowns are not safe results.'}/>:null}
+  {food.trim()?<Row title="Food & medicine interactions" status="REVIEW" detail="Food/drink information recorded for clinician review; no interaction database is connected."/>:null}
+  {!pregnancy.toLowerCase().includes('unknown')?<Row title="Pregnancy & breastfeeding" status="REVIEW" detail={pregnancy+' — medicine-specific risk assessment is not connected.'}/>:null}
+  {!kidney.toLowerCase().includes('unknown')?<Row title="Kidney safety" status="REVIEW" detail={kidney+' — renal dose adjustment and contraindications are not assessed.'}/>:null}
+  {!liver.toLowerCase().includes('unknown')?<Row title="Liver safety" status="REVIEW" detail={liver+' — hepatic precautions and dose adjustment are not assessed.'}/>:null}
   <Row title="Medicine timing" status="NOT GENERATED" detail="Follow the prescription label. No personalised timing schedule is generated because dose instructions may be incomplete."/>
   <Row title="Prescription vs label" status="NOT VERIFIED" detail="FDA label lookup is not a product-pack scan or prescription validation. Confirm active ingredient, strength and dosage form with a pharmacist."/>
   <View style={s.card}><Text style={s.heading}>PHARMACIST REVIEW CHECKLIST</Text><Text style={s.detail}>Share the medicines and findings as a checklist. It records review items; it does not certify that they have been checked.</Text><Pressable disabled={checklistBusy} style={s.shareButton} onPress={shareChecklist}><Text style={s.shareButtonText}>{checklistBusy?'Preparing…':'Share findings checklist via WhatsApp or other app'}</Text></Pressable></View>
