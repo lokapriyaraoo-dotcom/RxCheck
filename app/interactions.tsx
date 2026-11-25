@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, ActivityIndicator, Linking } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
-import { checkInteractions } from '../services/interactions';
+import { runClinicalWorkflow } from '../services/clinicalWorkflow';
 import type { Medicine } from '../services/types';
 
 type LabelEvidence = {
@@ -73,18 +73,25 @@ export default function Interactions(){
  const notFoundCount=evidence.filter(x=>x.status==='not-found').length;
  const unavailableCount=evidence.filter(x=>x.status==='unavailable').length;
  const hasInteractionText=matched.some(x=>x.interactions.length>0);
- const interactionFindings=useMemo(()=>{
+ const workflow=useMemo(()=>{
    const entries:Medicine[]=list.map((name,index)=>({
      id:String(index),name,strength:'',dose:'',unit:'unknown',frequency:'',duration:'',
      instructions:'',needsReview:true,
    }));
-   return checkInteractions(entries);
+   return runClinicalWorkflow(entries);
  },[params.meds]);
+ const interactionFindings=workflow.interactionFindings;
   return <ScrollView contentContainerStyle={s.page}>
   <Link href="/" style={s.back}>‹ Home</Link><Brand size={38}/>
   <Text style={s.title}>FDA medicine-label lookup</Text>
   <Text style={s.copy}>This screen runs RxCheck's local interaction engine and retrieves individual FDA product-label information. The starter database maps three exact generic names but contains no pharmacist-reviewed interaction rules, so combinations remain UNKNOWN until reviewed records are added. FDA label text alone cannot establish whether two medicines interact. Medicine names are sent to the public openFDA API; prescription images and patient details are not sent.</Text>
   <View style={s.card}><Text style={s.section}>MEDICINES ENTERED</Text>{list.length?list.map((m,i)=><Text key={i} style={s.med}>• {m}</Text>):<Text style={s.copy}>No medicine names were supplied. Return to patient details and add all prescribed and currently used medicines.</Text>}</View>
+  <View style={s.report}>
+   <Text style={s.reportTitle}>Clinical workflow summary</Text>
+   <Text style={s.copy}>{workflow.medicineCount} unique medicines · {workflow.pairCount} unique drug pairs evaluated. Every pair is checked once. Missing pharmacist-reviewed records remain UNKNOWN.</Text>
+   <Text style={s.copy}>Food–drug interactions: NOT ASSESSED — a verified food-interaction dataset and food/exposure inputs are not yet connected.</Text>
+   <Text style={s.copy}>Overall workflow: pharmacist review required; this is not clinical clearance.</Text>
+  </View>
   <View style={s.report}>
    <Text style={s.reportTitle}>Local interaction database assessment</Text>
    <Text style={s.copy}>RxCheck checks each medicine pair against its bundled interaction records. The database currently has no pharmacist-reviewed pair records, so results remain UNKNOWN—not safe, major, moderate or minor. FDA label excerpts below are individual product information, not a pairwise interaction verdict.</Text>
