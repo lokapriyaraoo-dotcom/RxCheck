@@ -83,9 +83,9 @@ jobs:
           set -euo pipefail
           wrapper_file="gradle/wrapper/gradle-wrapper.properties"
           if grep -q '^networkTimeout=' "$wrapper_file"; then
-            sed -i 's/^networkTimeout=.*/networkTimeout=120000/' "$wrapper_file"
+            sed -i 's/^networkTimeout=.*/networkTimeout=180000/' "$wrapper_file"
           else
-            echo "networkTimeout=120000" >> "$wrapper_file"
+            echo "networkTimeout=180000" >> "$wrapper_file"
           fi
 
       - name: Set up Gradle and cache dependencies
