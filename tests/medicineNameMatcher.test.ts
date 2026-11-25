@@ -14,6 +14,6 @@ describe('medicine OCR name matching', () => {
     expect(findClosestMedicineName('unknown medicine', ['metformin', 'paracetamol'])).toBeNull();
   });
   it('does not choose between equally close candidates', () => {
-    expect(findClosestMedicineName('cetrizine', ['cetirizine', 'cetirizina'])).toBeNull();
+    expect(findClosestMedicineName('cetrizine', ['cetirizine', 'cetrizina'])).toBeNull();
   });
 });
