@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { findClosestMedicineName, cleanOcrMedicineName } from './medicineNameMatcher';
 
 export type MedicineReference = { name: string; ingredient: string; aliases: string[]; source: string };
 export type IngredientCheck = { medicine: string; ingredient: string | null; status: 'matched' | 'unknown' };
@@ -86,3 +87,13 @@ export async function findReviewedInteraction(a: string, b: string) {
 }
 
 export const localCatalogCoverage = STARTER_CATALOG.length;
+
+/** Suggests a local generic-name correction; callers must ask the user to confirm it. */
+export async function suggestMedicineNameCorrection(rawName: string): Promise<string | null> {
+  const db = await getLocalDatabase();
+  const rows = await db.getAllAsync<{name:string;aliases_json:string}>('SELECT name, aliases_json FROM medicine_catalog');
+  const candidates = rows.flatMap(row => { let aliases:string[]=[]; try { aliases=JSON.parse(row.aliases_json); } catch {} return [row.name,...aliases]; });
+  const match = findClosestMedicineName(cleanOcrMedicineName(rawName), candidates);
+  if (!match) return null;
+  return rows.find(row => row.name.toLowerCase() === match.toLowerCase())?.name || match;
+}
