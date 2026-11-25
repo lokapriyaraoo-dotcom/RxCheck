@@ -16,7 +16,7 @@ function parseFindings(value?: string): Finding[] {
 }
 
 export default function FinalReport() {
-  const params = useLocalSearchParams<{ meds?: string; prescribed?: string; findings?: string }>();
+  const params = useLocalSearchParams<{ meds?: string; prescribed?: string; findings?: string; foodStatus?: string }>();
   const medicines = useMemo(() => [...new Set(parse(params.meds))], [params.meds]);
   const prescribed = useMemo(() => [...new Set(parse(params.prescribed))], [params.prescribed]);
   const interactionFindings = useMemo(() => parseFindings(params.findings), [params.findings]);
@@ -61,6 +61,11 @@ export default function FinalReport() {
         <Text style={s.copy}>Source: {finding.source || 'RxCheck local database'}.</Text>
       </View>)}
       <Text style={s.copy}>Do not stop, change or substitute medicines based on this automated report. A pharmacist or prescriber must review all unknown or flagged findings.</Text>
+    </View>
+
+    <View style={s.card}>
+      <Text style={s.section}>FOOD–DRUG INTERACTION CHECK</Text>
+      <Text style={s.copy}>Status: {(params.foodStatus || 'not-assessed').toString().toUpperCase()}. RxCheck does not yet have a connected, pharmacist-reviewed food-interaction dataset or patient food/exposure inputs. This section is not a negative interaction result.</Text>
     </View>
 
     <View style={s.card}>
