@@ -7,7 +7,7 @@ import { buildPharmacistChecklist, sharePharmacistChecklist } from '../services/
 
 function parse(value?:string):string[]{try{const v=JSON.parse(value||'[]');return Array.isArray(v)?v.filter((x):x is string=>typeof x==='string'):[]}catch{return[]}}
 function unique(values:string[]){return [...new Set(values.map(x=>x.trim()).filter(Boolean))]}
-function Row({title,status,detail}:{title:string;status:string;detail:string}){const label=/duplicate|match/i.test(status)?'Found':/unknown|not provided/i.test(status)?'Unknown':'Review';return <View style={s.row}><Text style={s.rowTitle}>{title}</Text><Text style={[s.status,label==='Found'?s.found:label==='Unknown'?s.unknown:s.review]}>{label}</Text><Text style={s.detail}>{detail}</Text></View>}
+function Row({title,status,detail}:{title:string;status:string;detail:string}){const label=/possible duplicate|possible allergy match/i.test(status)?'Found':/unknown|not provided|not confirmed|no match/i.test(status)?'Unknown':'Review';return <View style={s.row}><Text style={s.rowTitle}>{title}</Text><Text style={[s.status,label==='Found'?s.found:label==='Unknown'?s.unknown:s.review]}>{label}</Text><Text style={s.detail}>{detail}</Text></View>}
 export default function SafetyReport(){
  const p=useLocalSearchParams<{meds?:string;prescribed?:string}>();
  const meds=useMemo(()=>unique(parse(p.meds)),[p.meds]);
