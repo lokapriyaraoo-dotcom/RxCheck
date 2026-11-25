@@ -4,6 +4,7 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Brand } from '../components/Brand';
 import { runClinicalWorkflow } from '../services/clinicalWorkflow';
 import type { Medicine } from '../services/types';
+import { getCachedFdaLabel, saveCachedFdaLabel } from '../services/localDatabase';
 
 type LabelEvidence = {
   medicine:string;
@@ -20,16 +21,24 @@ async function lookupFdaLabel(medicine:string):Promise<LabelEvidence>{
   const search='openfda.generic_name:"'+name+'" OR openfda.brand_name:"'+name+'"';
   const url='https://api.fda.gov/drug/label.json?search='+encodeURIComponent(search)+'&limit=1';
   try{
-    const response=await fetch(url);
-    if(!response.ok)return {
-      medicine,status:response.status===404?'not-found':'unavailable',
-      interactions:[],warnings:[],sourceUrl
-    };
+    const cached=await getCachedFdaLabel<LabelEvidence>(name);
+    if(cached)return {...cached,medicine};
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),10000);
+    let response:Response;
+    try{response=await fetch(url,{signal:controller.signal});}finally{clearTimeout(timeout);}
+    if(!response.ok){
+      const result:LabelEvidence={medicine,status:response.status===404?'not-found':'unavailable',interactions:[],warnings:[],sourceUrl};
+      if(response.status===404)await saveCachedFdaLabel(name,result).catch(()=>{});
+      return result;
+    }
     const data=await response.json() as {results?:Array<Record<string,unknown>>};
     const item=data.results?.[0];
-    if(!item)return {medicine,status:'not-found',interactions:[],warnings:[],sourceUrl};
+    if(!item){const result:LabelEvidence={medicine,status:'not-found',interactions:[],warnings:[],sourceUrl};await saveCachedFdaLabel(name,result).catch(()=>{});return result;}
     const arr=(v:unknown)=>Array.isArray(v)?v.filter(x=>typeof x==='string').slice(0,2) as string[]:[];
-    return {medicine,status:'matched',interactions:arr(item.drug_interactions),warnings:arr(item.boxed_warning).concat(arr(item.contraindications)),sourceUrl};
+    const result:LabelEvidence={medicine,status:'matched',interactions:arr(item.drug_interactions),warnings:arr(item.boxed_warning).concat(arr(item.contraindications)),sourceUrl};
+    await saveCachedFdaLabel(name,result).catch(()=>{});
+    return result;
   }catch{
     return {medicine,status:'unavailable',interactions:[],warnings:[],sourceUrl};
   }
@@ -55,6 +64,7 @@ export default function Interactions(){
  const prescribed=useMemo(()=>uniqueNames(parseNames(params.prescribed)),[params.prescribed]);
  const list=uniqueNames(medicines);
  const [loading,setLoading]=useState(false);
+ const [retryKey,setRetryKey]=useState(0);
  const [evidence,setEvidence]=useState<LabelEvidence[]>([]);
  const [expandedLabels,setExpandedLabels]=useState<Record<string,boolean>>({});
  const router=useRouter();
@@ -68,7 +78,7 @@ export default function Interactions(){
    }
    run();
    return()=>{live=false;};
- },[params.meds]);
+ },[params.meds,retryKey]);
  const matched=evidence.filter(x=>x.status==='matched');
  const notFoundCount=evidence.filter(x=>x.status==='not-found').length;
  const unavailableCount=evidence.filter(x=>x.status==='unavailable').length;
@@ -117,7 +127,7 @@ export default function Interactions(){
     <Pressable style={s.next} onPress={()=>Linking.openURL('https://www.drugs.com/drug_interactions.html')}><Text style={s.nextText}>Check interactions ↗</Text></Pressable>
     <Text style={s.copy}>Opens the external Drugs.com interaction checker. Enter the complete medicine list there and review its result with a pharmacist or prescriber; RxCheck does not import or verify that result.</Text>
    </View>:null}
-   {!loading&&unavailableCount>0?<Text style={s.copy}>FDA lookup could not be completed for {unavailableCount} medicine name(s), for example because the service was unavailable or rate-limited. Those names were not checked; retry later.</Text>:null}
+   {!loading&&unavailableCount>0?<View style={s.finding}><Text style={s.copy}>FDA lookup could not be completed for {unavailableCount} medicine name(s). They remain Unknown; retry when a connection is available.</Text><Pressable style={s.next} onPress={()=>setRetryKey(value=>value+1)}><Text style={s.nextText}>Retry FDA lookup</Text></Pressable></View>:null}
    {!loading&&matched.map((item,i)=><View key={i} style={s.finding}>
     <Text style={s.findingTitle}>{item.medicine} — FDA label matched</Text>
     <Pressable onPress={()=>setExpandedLabels(old=>({...old,[item.medicine]:!old[item.medicine]}))}><Text style={s.detailsToggle}>{expandedLabels[item.medicine]?'Hide details':'View details'}</Text></Pressable>

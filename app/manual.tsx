@@ -7,6 +7,7 @@ import { emptyPatient, type Medicine, type Patient } from '../services/types';
 import { extractPatientDetails, extractMedicineCandidates, readPrescriptionImage, validateImageBytes } from '../services/ocr';
 import { readHandwrittenPrescriptionImage } from '../services/handwritingOcr';
 import { getReview, saveReview } from '../services/localHistory';
+import { suggestMedicineNameCorrection } from '../services/localDatabase';
 
 const input=(label:string,value:string,onChange:(v:string)=>void,placeholder='')=><View style={{gap:5}}><Text style={s.label}>{label}</Text><TextInput value={value} onChangeText={onChange} placeholder={placeholder} style={s.input}/></View>;
 function localMedicines(text:string,prefix='ocr',confidence?:number):Medicine[]{
@@ -24,6 +25,7 @@ export default function Manual(){
   const [meds,setMeds]=useState<Medicine[]>(()=>localMedicines(initialText));
   const [draft,setDraft]=useState({name:'',strength:'',dose:'',unit:'unknown' as Medicine['unit'],frequency:'',duration:'',instructions:''});
   const [busy,setBusy]=useState(false);
+  const [nameSuggestions,setNameSuggestions]=useState<Record<string,string>>({});
   const [currentMedsText,setCurrentMedsText]=useState('');
   const [reviewId,setReviewId]=useState(()=>typeof params.resumeId==='string'?params.resumeId:String(Date.now()));
   const [historyReady,setHistoryReady]=useState(typeof params.resumeId!=='string');
@@ -59,6 +61,13 @@ export default function Manual(){
     },900);
     return()=>clearTimeout(timer);
   },[reviewId,patient,meds,currentMedsText]);
+
+  useEffect(()=>{
+    let live=true;
+    Promise.all(meds.map(async medicine=>({id:medicine.id,suggestion:await suggestMedicineNameCorrection(medicine.name).catch(()=>null)})))
+      .then(rows=>{if(live)setNameSuggestions(Object.fromEntries(rows.filter(row=>row.suggestion).map(row=>[row.id,row.suggestion as string])));});
+    return()=>{live=false;};
+  },[meds.map(m=>m.id+':'+m.name).join('|')]);
 
   useEffect(()=>{
     if(typeof params.ocrText!=='string'||!params.ocrText.trim())return;
@@ -176,6 +185,7 @@ export default function Manual(){
     {meds.map((m,i)=><View key={m.id} style={s.med}>
       <Text style={s.medTitle}>Medicine {i+1}</Text>
       {input('Medicine name',m.name,v=>updateMedicine(m.id,'name',v))}
+      {nameSuggestions[m.id] && nameSuggestions[m.id].toLowerCase()!==m.name.toLowerCase() ? <View style={s.suggestion}><Text style={s.suggestionText}>Did you mean {nameSuggestions[m.id]}?</Text><View style={s.suggestionActions}><Pressable onPress={()=>{updateMedicine(m.id,'name',nameSuggestions[m.id]);setNameSuggestions(old=>({...old,[m.id]:''}));}}><Text style={s.suggestionConfirm}>Confirm</Text></Pressable><Pressable onPress={()=>setNameSuggestions(old=>({...old,[m.id]:''}))}><Text style={s.suggestionEdit}>Keep / edit original</Text></Pressable></View></View>:null}
       {input('Strength',m.strength,v=>updateMedicine(m.id,'strength',v))}
       {input('Dose',m.dose,v=>updateMedicine(m.id,'dose',v))}
       {input('Unit',m.unit,v=>updateMedicine(m.id,'unit',v))}
@@ -204,6 +214,7 @@ const s=StyleSheet.create({
   detectedLabel:{fontSize:11,fontWeight:'800',color:'#62716B'},
   detectedValue:{fontSize:13,fontWeight:'800',color:'#203A34'},
   med:{padding:14,backgroundColor:'#FFF',borderRadius:9,gap:4},
+  suggestion:{backgroundColor:'#EAF4EF',padding:10,borderRadius:8,gap:7},suggestionText:{fontSize:13,fontWeight:'800',color:'#24483D'},suggestionActions:{flexDirection:'row',gap:18},suggestionConfirm:{fontSize:13,fontWeight:'900',color:'#0E6E63'},suggestionEdit:{fontSize:13,fontWeight:'800',color:'#56665F'},
   medTitle:{fontWeight:'800',fontSize:16,color:'#1D332F'},
   flag:{fontSize:12,fontWeight:'800'},
   confidenceHigh:{color:'#147A43'},confidenceMedium:{color:'#9A650D'},confidenceLow:{color:'#B42318'},

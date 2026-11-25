@@ -5,7 +5,7 @@
     "scheme": "rxcheck",
     "version": "1.0.6",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
       "expo-router",

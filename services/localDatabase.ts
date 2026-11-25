@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { findClosestMedicineName, cleanOcrMedicineName } from './medicineNameMatcher';
 
 export type MedicineReference = { name: string; ingredient: string; aliases: string[]; source: string };
 export type IngredientCheck = { medicine: string; ingredient: string | null; status: 'matched' | 'unknown' };
@@ -49,6 +50,11 @@ export async function getLocalDatabase() {
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS fda_label_cache (
+      medicine_key TEXT PRIMARY KEY NOT NULL,
+      payload TEXT NOT NULL,
+      cached_at TEXT NOT NULL
+    );
   `);
   for (const item of STARTER_CATALOG) {
     await database.runAsync(
@@ -86,3 +92,25 @@ export async function findReviewedInteraction(a: string, b: string) {
 }
 
 export const localCatalogCoverage = STARTER_CATALOG.length;
+
+/** Suggests a local generic-name correction; callers must ask the user to confirm it. */
+export async function suggestMedicineNameCorrection(rawName: string): Promise<string | null> {
+  const db = await getLocalDatabase();
+  const rows = await db.getAllAsync<{name:string;aliases_json:string}>('SELECT name, aliases_json FROM medicine_catalog');
+  const candidates = rows.flatMap(row => { let aliases:string[]=[]; try { aliases=JSON.parse(row.aliases_json); } catch {} return [row.name,...aliases]; });
+  const match = findClosestMedicineName(cleanOcrMedicineName(rawName), candidates);
+  if (!match) return null;
+  return rows.find(row => row.name.toLowerCase() === match.toLowerCase())?.name || match;
+}
+
+export async function getCachedFdaLabel<T>(medicine: string, maxAgeMs = 7 * 24 * 60 * 60 * 1000): Promise<T | null> {
+  const db = await getLocalDatabase();
+  const key = normalize(medicine);
+  const row = await db.getFirstAsync<{payload:string;cached_at:string}>('SELECT payload,cached_at FROM fda_label_cache WHERE medicine_key=?', key);
+  if (!row || Date.now() - new Date(row.cached_at).getTime() > maxAgeMs) return null;
+  try { return JSON.parse(row.payload) as T; } catch { return null; }
+}
+export async function saveCachedFdaLabel(medicine: string, payload: unknown): Promise<void> {
+  const db = await getLocalDatabase();
+  await db.runAsync('INSERT OR REPLACE INTO fda_label_cache (medicine_key,payload,cached_at) VALUES (?,?,?)', normalize(medicine), JSON.stringify(payload), new Date().toISOString());
+}

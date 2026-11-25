@@ -78,8 +78,10 @@ export default function Scan() {
     if(busy)return;
     let result:ImagePicker.ImagePickerResult;
     if(source==='camera') {
+      const explanation = await new Promise<boolean>(resolve => Alert.alert('Use your camera', 'RxCheck uses the camera only to capture a prescription. Text recognition happens on this phone; the photo is not uploaded for OCR.', [{text:'Not now',style:'cancel',onPress:()=>resolve(false)},{text:'Continue',onPress:()=>resolve(true)}]));
+      if(!explanation)return;
       const permission=await ImagePicker.requestCameraPermissionsAsync();
-      if(!permission.granted){Alert.alert('Permission needed','Allow camera access to photograph a prescription.');return;}
+      if(!permission.granted){Alert.alert('Camera permission needed','Camera access was not allowed. You can still choose a prescription photo from your gallery or enter medicines manually.');return;}
       result=await ImagePicker.launchCameraAsync({mediaTypes:['images'],quality:0.9});
     } else {
       result=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsMultipleSelection:true,selectionLimit:5,quality:0.9});
