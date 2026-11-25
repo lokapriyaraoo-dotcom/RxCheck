@@ -76,6 +76,21 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean
 
+      - name: Configure Gradle download timeout
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          wrapper_file="gradle/wrapper/gradle-wrapper.properties"
+          if grep -q '^networkTimeout=' "$wrapper_file"; then
+            sed -i 's/^networkTimeout=.*/networkTimeout=120000/' "$wrapper_file"
+          else
+            printf '\\nnetworkTimeout=120000\\n' >> "$wrapper_file"
+          fi
+
+      - name: Set up Gradle and cache dependencies
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Build standalone release APK
         working-directory: android
         env:
