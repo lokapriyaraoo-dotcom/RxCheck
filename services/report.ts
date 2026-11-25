@@ -23,7 +23,7 @@ export async function exportFinalReport(data: FinalReportData) {
     table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:7px;border:1px solid #d9e2dc;text-align:left;vertical-align:top}.notice{background:#fff4de;padding:12px;margin:16px 0}a{color:#087e72;word-break:break-all}
   </style></head><body>
     <h1>RxCheck — Short Medicine Report</h1>
-    <p>Generated ${new Date().toLocaleString()}. For information and professional review only.</p>
+    <p>Generated ${new Date().toLocaleString()}. For information and professional review only.</p>\n    <div class="notice"><b>Overall status: PHARMACIST REVIEW REQUIRED.</b> Unknown or unassessed results are not evidence of safety.</div>
     <h2>Prescription Summary</h2>
     <p><b>Patient:</b> ${para(data.patientName)} &nbsp; <b>Age:</b> ${para(data.age)}</p>
     <p><b>Indication:</b> ${para(data.diagnosis)}</p><p><b>Allergies / context:</b> ${para(data.allergies)}</p>
